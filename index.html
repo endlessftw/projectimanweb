@@ -21,15 +21,15 @@
             <nav class="navbar">
                 <div class="nav-content">
                     <div class="nav-left">
-                        <img src="assets/images/projectlogo.png" alt="Project Logo" class="nav-logo">
+                        <img src="assets/images/projectlogo.png" alt="Project Iman" class="nav-logo">
                         <div class="nav-links">
                             <a href="#" class="nav-link active" data-page="home">Home</a>
-                            <a href="#" class="nav-link" data-page="qibla">Qibla Direction</a>
+                            <a href="#" class="nav-link" data-page="qibla">Qibla</a>
                             <a href="#" class="nav-link" data-page="quran">Quran</a>
-                            <a href="#" class="nav-link" data-page="hadith">Daily Hadith</a>
-                            <a href="#" class="nav-link" data-page="dua">Dua of the Day</a>
-                            <a href="#" class="nav-link" data-page="tasbih">Tasbih Counter</a>
-                            <a href="#" class="nav-link" data-page="events">Islamic Events</a>
+                            <a href="#" class="nav-link" data-page="hadith">Hadith</a>
+                            <a href="#" class="nav-link" data-page="dua">Dua</a>
+                            <a href="#" class="nav-link" data-page="tasbih">Tasbih</a>
+                            <a href="#" class="nav-link" data-page="events">Events</a>
                         </div>
                     </div>
                     <div class="nav-right">
@@ -71,12 +71,38 @@
                 <div class="grid-container">
                     <!-- Prayer Times Section -->
                     <section class="card prayer-times">
-                        <h2><i class="fas fa-clock"></i> Prayer Times</h2>
+                        <div class="prayer-times-header">
+                            <h2><i class="fas fa-clock"></i> Prayer Times</h2>
+                            <div id="nextPrayer" class="next-prayer"></div>
+                        </div>
                         <div id="prayerTimes" class="prayer-grid">
                             <!-- Prayer times will be dynamically added here -->
                         </div>
-                        <div id="nextPrayer" class="next-prayer">
-                            <!-- Next prayer countdown will be shown here -->
+                    </section>
+
+                    <!-- Dual Calendar Section -->
+                    <section class="card dual-calendar">
+                        <div class="calendar-header">
+                            <h2><i class="fas fa-calendar-alt"></i> Islamic Calendar</h2>
+                            <div class="calendar-nav">
+                                <button id="prevMonth" class="calendar-nav-btn"><i class="fas fa-chevron-left"></i></button>
+                                <span id="currentMonth"></span>
+                                <button id="nextMonth" class="calendar-nav-btn"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                        <div class="calendar-table">
+                            <div class="weekdays">
+                                <div>Sun</div>
+                                <div>Mon</div>
+                                <div>Tue</div>
+                                <div>Wed</div>
+                                <div>Thu</div>
+                                <div>Fri</div>
+                                <div>Sat</div>
+                            </div>
+                            <div id="calendarDays" class="calendar-days">
+                                <!-- Calendar days will be added here dynamically -->
+                            </div>
                         </div>
                     </section>
                 </div>

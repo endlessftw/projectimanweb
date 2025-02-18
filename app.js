@@ -44,7 +44,19 @@ const elements = {
     tasbihButton: document.getElementById('tasbihButton'),
     resetTasbih: document.getElementById('resetTasbih'),
     dhikrButtons: document.querySelectorAll('.dhikr-button'),
-    eventsContainer: document.getElementById('eventsContainer')
+    eventsContainer: document.getElementById('eventsContainer'),
+    prevMonth: document.getElementById('prevMonth'),
+    nextMonth: document.getElementById('nextMonth'),
+    currentMonth: document.getElementById('currentMonth'),
+    calendarDays: document.getElementById('calendarDays'),
+    gregorianDateInput: document.getElementById('gregorianDate'),
+    convertToHijri: document.getElementById('convertToHijri'),
+    hijriResult: document.getElementById('hijriResult'),
+    hijriDay: document.getElementById('hijriDay'),
+    hijriMonth: document.getElementById('hijriMonth'),
+    hijriYear: document.getElementById('hijriYear'),
+    convertToGregorian: document.getElementById('convertToGregorian'),
+    gregorianResult: document.getElementById('gregorianResult'),
 };
 
 // Add this to the top of the file, after the existing constants
@@ -58,6 +70,309 @@ const pages = {
     events: document.getElementById('events-page')
 };
 
+// Add this after the currentDisplayMonth declaration
+const islamicEvents = {
+    // Regular events
+    'Rajab': { type: 'holy', description: 'Sacred Month' },
+    "Sha'ban": { type: 'holy', description: 'Sacred Month' },
+    'Ramadan': { type: 'holy', description: 'Month of Fasting' },
+    'Dhul Qadah': { type: 'holy', description: 'Sacred Month' },
+    'Dhul Hijjah': { type: 'holy', description: 'Sacred Month' },
+    
+    // Special days
+    'Laylat al-Qadr': { type: 'special', description: 'Night of Power' },
+    'Eid al-Fitr': { type: 'special', description: 'Festival of Breaking Fast' },
+    'Eid al-Adha': { type: 'special', description: 'Festival of Sacrifice' },
+    'Islamic New Year': { type: 'special', description: 'First of Muharram' },
+    'Ashura': { type: 'special', description: '10th of Muharram' },
+    "Mawlid al-Nabi": { type: 'special', description: "Prophet's Birthday" },
+    'Isra and Miraj': { type: 'special', description: 'Night Journey' },
+    'First of Ramadan': { type: 'special', description: 'Beginning of Ramadan' },
+    'Laylat al-Baraat': { type: 'special', description: 'Night of Records' },
+    'Laylat al-Miraj': { type: 'special', description: 'Night of Ascension' },
+    'Laylat al-Raghaib': { type: 'special', description: 'Night of Wishes' }
+};
+
+// Add this after the islamicEvents constant
+const RAMADAN_START_2024 = new Date(2024, 1, 28); // February 28, 2024
+
+// Add these new calendar functions
+let currentDisplayMonth = new Date();
+
+async function updateCalendar() {
+    try {
+        const year = currentDisplayMonth.getFullYear();
+        const month = currentDisplayMonth.getMonth() + 1;
+        const day = 1;
+        
+        // Format date properly for API
+        const formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        
+        // Update month display with both Gregorian and Hijri
+        try {
+            const response = await fetch(`https://api.aladhan.com/v1/gToH/${formattedDate}`);
+            if (!response.ok) throw new Error('Failed to fetch Hijri date');
+            
+            const data = await response.json();
+            if (data && data.data && data.data.hijri) {
+                elements.currentMonth.textContent = `${currentDisplayMonth.toLocaleString('default', { month: 'long' })} ${year} / ${data.data.hijri.month.en} ${data.data.hijri.year}`;
+            } else {
+                // Fallback to only Gregorian if Hijri date is not available
+                elements.currentMonth.textContent = `${currentDisplayMonth.toLocaleString('default', { month: 'long' })} ${year}`;
+            }
+        } catch (error) {
+            console.error('Error fetching Hijri date:', error);
+            // Fallback to only Gregorian
+            elements.currentMonth.textContent = `${currentDisplayMonth.toLocaleString('default', { month: 'long' })} ${year}`;
+        }
+        
+        // Calculate calendar days
+        const firstDay = new Date(year, month - 1, 1);
+        const lastDay = new Date(year, month, 0);
+        const daysInMonth = lastDay.getDate();
+        const startingDay = firstDay.getDay();
+        
+        let calendarHTML = '';
+        
+        // Previous month days
+        const prevMonthDays = startingDay;
+        const prevMonth = new Date(year, month - 2, 0);
+        for (let i = prevMonthDays - 1; i >= 0; i--) {
+            const date = new Date(year, month - 2, day);
+            calendarHTML += await createDayElement(date, true);
+        }
+        
+        // Current month days
+        for (let i = 1; i <= daysInMonth; i++) {
+            const date = new Date(year, month - 1, i);
+            const isToday = date.toDateString() === new Date().toDateString();
+            calendarHTML += await createDayElement(date, false, null, isToday);
+        }
+        
+        // Next month days
+        const remainingDays = 42 - (prevMonthDays + daysInMonth);
+        for (let i = 1; i <= remainingDays; i++) {
+            const date = new Date(year, month, i);
+            calendarHTML += await createDayElement(date, true);
+        }
+        
+        elements.calendarDays.innerHTML = calendarHTML;
+    } catch (error) {
+        console.error('Error updating calendar:', error);
+        // Fallback to basic calendar display
+        displayFallbackCalendar();
+    }
+}
+
+async function createDayElement(date, isDifferentMonth, hijriDate, isToday = false) {
+    const isFriday = date.getDay() === 5;
+    const isRamadan = date >= RAMADAN_START_2024 && date <= new Date(2024, 2, 28);
+    
+    let hijriDateText = '';
+    if (!isDifferentMonth) {
+        try {
+            // Only attempt API call for dates within 3 months
+            const now = new Date();
+            const threeMonthsFromNow = new Date(now.getFullYear(), now.getMonth() + 3, now.getDate());
+            
+            if (date <= threeMonthsFromNow) {
+                const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+                const response = await fetch(`https://api.aladhan.com/v1/gToH/${formattedDate}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.data && data.data.hijri) {
+                        hijriDate = data.data.hijri;
+                        hijriDateText = `<span class="hijri-date">${hijriDate.day} ${hijriDate.month.en}</span>`;
+                    } else {
+                        // Use estimated calculation if API response is invalid
+                        const estimatedHijri = estimateHijriDate(date);
+                        hijriDateText = `<span class="hijri-date estimated">${estimatedHijri.day} ${estimatedHijri.month}</span>`;
+                    }
+                } else {
+                    // Use estimated calculation for failed API calls
+                    const estimatedHijri = estimateHijriDate(date);
+                    hijriDateText = `<span class="hijri-date estimated">${estimatedHijri.day} ${estimatedHijri.month}</span>`;
+                }
+            } else {
+                // Use estimated calculation for future dates
+                const estimatedHijri = estimateHijriDate(date);
+                hijriDateText = `<span class="hijri-date estimated">${estimatedHijri.day} ${estimatedHijri.month}</span>`;
+            }
+        } catch (error) {
+            console.warn('Error fetching Hijri date:', error);
+            // Use estimated calculation as fallback
+            const estimatedHijri = estimateHijriDate(date);
+            hijriDateText = `<span class="hijri-date estimated">${estimatedHijri.day} ${estimatedHijri.month}</span>`;
+        }
+    }
+    
+    const classes = [
+        'calendar-day',
+        isDifferentMonth ? 'different-month' : '',
+        isToday ? 'today' : '',
+        isFriday ? 'friday' : '',
+        isRamadan ? 'ramadan' : ''
+    ].filter(Boolean).join(' ');
+
+    let islamicEventHTML = '';
+    if (hijriDate) {
+        const dayEvents = getIslamicEvents(hijriDate);
+        if (dayEvents && dayEvents.length > 0) {
+            islamicEventHTML = dayEvents.map(event => 
+                `<div class="islamic-event ${event.type}">${event.description}</div>`
+            ).join('');
+        }
+    }
+
+    return `
+        <div class="${classes}">
+            <span class="gregorian-date">${date.getDate()}</span>
+            ${hijriDateText}
+            ${islamicEventHTML}
+        </div>
+    `;
+}
+
+// Add this helper function for estimating Hijri dates
+function estimateHijriDate(gregorianDate) {
+    // Constants for Hijri calendar calculation
+    const ISLAMIC_EPOCH = 1948439.5; // Julian date for 1 Muharram 1 AH
+    const GREGORIAN_EPOCH = 1721425.5; // Julian date for 1 January 1 CE
+    const MILLISECONDS_PER_DAY = 86400000;
+    
+    // Convert Gregorian date to Julian date
+    const julianDate = Math.floor((gregorianDate.getTime() / MILLISECONDS_PER_DAY) + GREGORIAN_EPOCH);
+    
+    // Calculate approximate Hijri date
+    const hijriDays = julianDate - ISLAMIC_EPOCH;
+    const hijriYear = Math.floor((30 * hijriDays + 10646) / 10631);
+    const hijriMonth = Math.min(12, Math.ceil((hijriDays - (29 + Math.floor((hijriYear - 1) * 354.367)) + 29) / 29.5));
+    const hijriDay = Math.min(30, Math.ceil(hijriDays - (29 + Math.floor((hijriYear - 1) * 354.367)) - Math.floor((hijriMonth - 1) * 29.5)));
+    
+    const months = [
+        'Muharram', 'Safar', 'Rabi al-Awwal', 'Rabi al-Thani',
+        'Jumada al-Awwal', 'Jumada al-Thani', 'Rajab', "Sha'ban",
+        'Ramadan', 'Shawwal', 'Dhu al-Qadah', 'Dhu al-Hijjah'
+    ];
+    
+    return {
+        day: Math.max(1, Math.min(30, Math.round(hijriDay))),
+        month: months[Math.max(0, Math.min(11, hijriMonth - 1))],
+        year: hijriYear
+    };
+}
+
+function displayFallbackCalendar() {
+    const year = currentDisplayMonth.getFullYear();
+    const month = currentDisplayMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDay = firstDay.getDay();
+    
+    elements.currentMonth.textContent = `${currentDisplayMonth.toLocaleString('default', { month: 'long' })} ${year}`;
+    
+    let calendarHTML = '';
+    
+    // Previous month days
+    for (let i = startingDay - 1; i >= 0; i--) {
+        calendarHTML += `
+            <div class="calendar-day different-month">
+                <span class="gregorian-date">${new Date(year, month, -i).getDate()}</span>
+            </div>
+        `;
+    }
+    
+    // Current month days
+    for (let i = 1; i <= daysInMonth; i++) {
+        const date = new Date(year, month, i);
+        const isToday = date.toDateString() === new Date().toDateString();
+        const isFriday = date.getDay() === 5;
+        const isRamadan = date >= RAMADAN_START_2024 && date <= new Date(2024, 2, 28);
+        
+        calendarHTML += `
+            <div class="calendar-day ${isToday ? 'today' : ''} ${isFriday ? 'friday' : ''} ${isRamadan ? 'ramadan' : ''}">
+                <span class="gregorian-date">${i}</span>
+            </div>
+        `;
+    }
+    
+    // Next month days
+    const remainingDays = 42 - (startingDay + daysInMonth);
+    for (let i = 1; i <= remainingDays; i++) {
+        calendarHTML += `
+            <div class="calendar-day different-month">
+                <span class="gregorian-date">${i}</span>
+            </div>
+        `;
+    }
+    
+    elements.calendarDays.innerHTML = calendarHTML;
+}
+
+// Update the event listeners for calendar navigation
+if (elements.prevMonth) {
+    elements.prevMonth.addEventListener('click', async () => {
+        currentDisplayMonth = new Date(currentDisplayMonth.getFullYear(), currentDisplayMonth.getMonth() - 1, 1);
+        await updateCalendar();
+    });
+}
+
+if (elements.nextMonth) {
+    elements.nextMonth.addEventListener('click', async () => {
+        currentDisplayMonth = new Date(currentDisplayMonth.getFullYear(), currentDisplayMonth.getMonth() + 1, 1);
+        await updateCalendar();
+    });
+}
+
+// Initialize calendar
+(async () => {
+    try {
+        await updateCalendar();
+    } catch (error) {
+        console.error('Error initializing calendar:', error);
+        // Add fallback display if API fails
+        const daysInMonth = new Date(currentDisplayMonth.getFullYear(), currentDisplayMonth.getMonth() + 1, 0).getDate();
+        const firstDay = new Date(currentDisplayMonth.getFullYear(), currentDisplayMonth.getMonth(), 1).getDay();
+        
+        let calendarHTML = '';
+        // Previous month days
+        for (let i = firstDay - 1; i >= 0; i--) {
+            calendarHTML += `
+                <div class="calendar-day different-month">
+                    <span class="gregorian-date">${new Date(currentDisplayMonth.getFullYear(), currentDisplayMonth.getMonth(), -i).getDate()}</span>
+                </div>
+            `;
+        }
+        
+        // Current month days
+        for (let i = 1; i <= daysInMonth; i++) {
+            const date = new Date(currentDisplayMonth.getFullYear(), currentDisplayMonth.getMonth(), i);
+            const isToday = date.toDateString() === new Date().toDateString();
+            const isFriday = date.getDay() === 5;
+            
+            calendarHTML += `
+                <div class="calendar-day ${isToday ? 'today' : ''} ${isFriday ? 'friday' : ''}">
+                    <span class="gregorian-date">${i}</span>
+                </div>
+            `;
+        }
+        
+        // Next month days
+        const remainingDays = 42 - (firstDay + daysInMonth);
+        for (let i = 1; i <= remainingDays; i++) {
+            calendarHTML += `
+                <div class="calendar-day different-month">
+                    <span class="gregorian-date">${i}</span>
+                </div>
+            `;
+        }
+        
+        elements.calendarDays.innerHTML = calendarHTML;
+        elements.currentMonth.textContent = currentDisplayMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+    }
+})();
+
 // Initialize the application
 async function init() {
     try {
@@ -66,13 +381,12 @@ async function init() {
         
         // Core functionality
         setupEventListeners();
-        updateDates();
         
         // Try to load user preferences but don't block if it fails
         try {
             await loadUserPreferences();
         } catch (error) {
-            console.log('Could not load user preferences:', error);
+            console.warn('Could not load user preferences:', error);
         }
 
         // Location-based features
@@ -81,14 +395,14 @@ async function init() {
             await loadPrayerTimes();
             await loadQiblaDirection();
         } catch (error) {
-            console.log('Could not load location-based features:', error);
+            console.warn('Could not load location-based features:', error);
         }
 
         // Content features
         try {
             await loadQuranData();
         } catch (error) {
-            console.log('Could not load Quran data:', error);
+            console.warn('Could not load Quran data:', error);
             if (elements.quranText) {
                 elements.quranText.innerHTML = '<div class="error-message">Unable to load Quran data. Please check your internet connection.</div>';
             }
@@ -97,7 +411,7 @@ async function init() {
         try {
             await loadHadith();
         } catch (error) {
-            console.log('Could not load Hadith:', error);
+            console.warn('Could not load Hadith:', error);
             if (elements.hadithContent) {
                 elements.hadithContent.innerHTML = '<div class="error-message">Unable to load Hadith. Please check your internet connection.</div>';
             }
@@ -106,7 +420,7 @@ async function init() {
         try {
             await loadDua();
         } catch (error) {
-            console.log('Could not load Dua:', error);
+            console.warn('Could not load Dua:', error);
             if (elements.duaContent) {
                 elements.duaContent.innerHTML = '<div class="error-message">Unable to load Dua. Please try again later.</div>';
             }
@@ -115,7 +429,7 @@ async function init() {
         try {
             await loadIslamicEvents();
         } catch (error) {
-            console.log('Could not load Islamic events:', error);
+            console.warn('Could not load Islamic events:', error);
             if (elements.eventsContainer) {
                 elements.eventsContainer.innerHTML = '<div class="error-message">Unable to load Islamic events. Please try again later.</div>';
             }
@@ -128,10 +442,41 @@ async function init() {
         applyUserPreferences();
         
         // Register service worker last
-        await registerServiceWorker();
+        if (window.location.protocol === 'https:' || window.location.hostname === 'localhost') {
+            try {
+                await registerServiceWorker();
+            } catch (error) {
+                console.warn('Could not register service worker:', error);
+            }
+        } else {
+            console.warn('Service Worker not registered: requires HTTPS or localhost');
+        }
+        
+        // Start progress updates
+        startProgressUpdates();
+        
+        // Initialize calendar calculator
+        initializeCalendarCalculator();
+        
+        // Initialize calendar
+        try {
+            await updateCalendar();
+        } catch (error) {
+            console.warn('Could not initialize calendar:', error);
+            displayFallbackCalendar();
+        }
         
     } catch (error) {
         console.error('Error during initialization:', error);
+        // Show a user-friendly error message
+        document.body.innerHTML += `
+            <div class="error-message" style="position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 1rem; border-radius: 8px;">
+                An error occurred while loading the application. Please refresh the page.
+                <button onclick="window.location.reload()" class="retry-button">
+                    Refresh Page
+                </button>
+            </div>
+        `;
     }
 }
 
@@ -233,12 +578,25 @@ async function filterByCategories(categories) {
 // User Preferences
 async function loadUserPreferences() {
     try {
+        // Check if Supabase is initialized
+        if (!supabase) {
+            console.warn('Supabase not initialized, using default preferences');
+            return;
+        }
+
         const { data, error } = await supabase
             .from('user_preferences')
             .select('*')
             .single();
 
-        if (error) throw error;
+        if (error) {
+            if (error.code === 'PGRST116') {
+                // No data found, this is normal for new users
+                console.log('No saved preferences found, using defaults');
+                return;
+            }
+            throw error;
+        }
 
         if (data) {
             tasbihCount = data.tasbih_count || 0;
@@ -248,6 +606,11 @@ async function loadUserPreferences() {
         }
     } catch (error) {
         console.error('Error loading preferences:', error);
+        // Continue with default values
+        tasbihCount = 0;
+        currentDhikr = 'SubhanAllah';
+        updateTasbihDisplay();
+        updateDhikrButtons();
     }
 }
 
@@ -279,6 +642,11 @@ function updateDhikrButtons() {
 
 // Event Listeners
 function setupEventListeners() {
+    // Logo click
+    document.querySelector('.nav-logo').addEventListener('click', () => {
+        navigateToPage('home');
+    });
+
     // Theme Toggle
     if (elements.themeToggle) {
         elements.themeToggle.addEventListener('click', toggleTheme);
@@ -514,60 +882,165 @@ async function getCurrentLocation() {
             throw new Error('Geolocation is not supported by your browser');
         }
 
-        const position = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(
-                resolve,
-                (error) => {
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:
-                            reject(new Error('Please allow location access to get accurate prayer times'));
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            reject(new Error('Location information is unavailable'));
-                            break;
-                        case error.TIMEOUT:
-                            reject(new Error('Location request timed out'));
-                            break;
-                        default:
-                            reject(new Error('An unknown error occurred'));
-                    }
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                }
-            );
-        });
+        // Detect browser
+        const userAgent = navigator.userAgent;
+        const isChrome = /Chrome/.test(userAgent) && !/Edg/.test(userAgent) && !/Brave/.test(userAgent);
+        const isBrave = /Brave/.test(userAgent);
         
+        console.log('Browser detection:', {
+            userAgent,
+            isChrome,
+            isBrave
+        });
+
+        const position = await new Promise((resolve, reject) => {
+            const options = {
+                enableHighAccuracy: true,
+                timeout: isChrome ? 5000 : 10000, // Shorter timeout for Chrome
+                maximumAge: 0
+            };
+
+            const successCallback = (pos) => {
+                // Verify the coordinates are reasonable
+                if (Math.abs(pos.coords.latitude) > 90 || Math.abs(pos.coords.longitude) > 180) {
+                    reject(new Error('Invalid coordinates detected'));
+                    return;
+                }
+                
+                // Log position data for debugging
+                console.log('Raw position data:', {
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude,
+                    accuracy: pos.coords.accuracy,
+                    timestamp: new Date(pos.timestamp).toISOString()
+                });
+
+                resolve(pos);
+            };
+
+            const errorCallback = async (error) => {
+                console.error('Geolocation error:', error);
+
+                // For Chrome, try again with lower accuracy if high accuracy fails
+                if (isChrome && error.code === error.TIMEOUT) {
+                    console.log('Retrying with lower accuracy on Chrome...');
+                    navigator.geolocation.getCurrentPosition(
+                        successCallback,
+                        (finalError) => {
+                            reject(new Error('Location detection failed. Please try using a different browser like Brave or Firefox.'));
+                        },
+                        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+                    );
+                    return;
+                }
+
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        reject(new Error('Please allow location access to get accurate prayer times'));
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        reject(new Error('Location information is unavailable'));
+                        break;
+                    case error.TIMEOUT:
+                        reject(new Error('Location request timed out'));
+                        break;
+                    default:
+                        reject(new Error('An unknown error occurred'));
+                }
+            };
+
+            navigator.geolocation.getCurrentPosition(successCallback, errorCallback, options);
+        });
+
         userLocation = {
             latitude: position.coords.latitude,
-            longitude: position.coords.longitude
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: position.timestamp,
+            browser: isChrome ? 'Chrome' : (isBrave ? 'Brave' : 'Other')
         };
-        
-        console.log('Location detected:', userLocation);
-        return userLocation;
+
+        // Get location name using Nominatim
+        try {
+            const nominatimResponse = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.latitude}&lon=${userLocation.longitude}&zoom=10`,
+                {
+                    headers: {
+                        'Accept-Language': 'en-US,en;q=0.9',
+                        'User-Agent': 'Project Iman - Islamic Prayer Times App'
+                    }
+                }
+            );
+            
+            if (!nominatimResponse.ok) {
+                throw new Error('Failed to get location name');
+            }
+            
+            const nominatimData = await nominatimResponse.json();
+            console.log('Nominatim response:', nominatimData);
+            
+            // Extract city and country from address
+            const address = nominatimData.address || {};
+            const city = address.city || address.town || address.village || address.suburb || address.county || '';
+            const country = address.country || '';
+            
+            // Store the verified location
+            userLocation.locationName = city ? (country ? `${city}, ${country}` : city) : country;
+            userLocation.verified = true;
+
+            // If using Chrome and location seems incorrect, show a suggestion
+            if (isChrome && userLocation.locationName.toLowerCase().includes('philadelphia')) {
+                elements.prayerTimes.innerHTML = `
+                    <div class="error-message">
+                        Chrome may be providing incorrect location data. For more accurate results:
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Try using Brave or Firefox browser</li>
+                            <li>Clear your browser cache and cookies</li>
+                            <li>Disable any VPN or proxy services</li>
+                        </ul>
+                        <button onclick="getCurrentLocation().then(loadPrayerTimes)" class="retry-button">
+                            Try Again
+                        </button>
+                    </div>
+                `;
+                throw new Error('Potentially incorrect location detected');
+            }
+
+            return userLocation;
+
+        } catch (geocodeError) {
+            console.error('Error getting location name:', geocodeError);
+            userLocation.locationName = `Location at ${userLocation.latitude.toFixed(4)}, ${userLocation.longitude.toFixed(4)}`;
+            userLocation.verified = false;
+            return userLocation;
+        }
+
     } catch (error) {
         console.error('Error getting location:', error);
         elements.prayerTimes.innerHTML = `
             <div class="error-message">
-                ${error.message}. Using default location (Mecca).
+                ${error.message}
+                ${error.message.includes('Chrome') ? '' : '. Using default location (Mecca)'}
                 <button onclick="getCurrentLocation().then(loadPrayerTimes)" class="retry-button">
                     Try Again
                 </button>
             </div>
         `;
-        // Default to Mecca coordinates if location access is denied
-        userLocation = {
-            latitude: 21.4225,
-            longitude: 39.8262
-        };
+        
+        if (!error.message.includes('Chrome')) {
+            userLocation = {
+                latitude: 21.4225,
+                longitude: 39.8262,
+                locationName: 'Mecca, Saudi Arabia',
+                verified: true
+            };
+        }
         return userLocation;
     }
 }
 
 // Date Functions
-function updateDates() {
+async function updateDates() {
     const now = new Date();
     // Update Gregorian date
     elements.gregorianDate.textContent = now.toLocaleDateString('en-US', {
@@ -580,43 +1053,49 @@ function updateDates() {
     // Fetch Hijri date with better error handling and fallback
     const fetchHijriDate = async () => {
         try {
-            // First try the aladhan API
-            const response = await fetch(`https://api.aladhan.com/v1/gToH?date=${now.toISOString().split('T')[0]}`);
-            if (!response.ok) throw new Error('Failed to fetch from primary API');
+            // Format date as YYYY-MM-DD
+            const dateStr = now.toISOString().split('T')[0];
+            
+            // First try the aladhan API with coordinates if available
+            let response;
+            if (userLocation) {
+                response = await fetch(
+                    `https://api.aladhan.com/v1/timings/${Math.floor(Date.now() / 1000)}?latitude=${userLocation.latitude}&longitude=${userLocation.longitude}`
+                );
+            } else {
+                response = await fetch(
+                    `https://api.aladhan.com/v1/gToH/${dateStr}`
+                );
+            }
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch from API: ${response.status}`);
+            }
             
             const data = await response.json();
-            if (!data.data || !data.data.hijri) throw new Error('Invalid data format');
+            let hijri;
             
-            const hijri = data.data.hijri;
+            if (data.data.date && data.data.date.hijri) {
+                hijri = data.data.date.hijri;
+            } else if (data.data.hijri) {
+                hijri = data.data.hijri;
+            } else {
+                throw new Error('Invalid data format');
+            }
+            
             elements.hijriDate.textContent = `${hijri.day} ${hijri.month.en} ${hijri.year} AH`;
         } catch (error) {
-            console.error('Error with primary Hijri API:', error);
-            
-            // Try backup API
-            try {
-                const backupResponse = await fetch(`https://api.aladhan.com/v1/timings/${Math.floor(Date.now() / 1000)}?latitude=21.4225&longitude=39.8262`);
-                if (!backupResponse.ok) throw new Error('Failed to fetch from backup API');
-                
-                const backupData = await backupResponse.json();
-                if (!backupData.data || !backupData.data.date || !backupData.data.date.hijri) {
-                    throw new Error('Invalid backup data format');
-                }
-                
-                const hijri = backupData.data.date.hijri;
-                elements.hijriDate.textContent = `${hijri.day} ${hijri.month.en} ${hijri.year} AH`;
-            } catch (backupError) {
-                console.error('Error with backup Hijri API:', backupError);
-                elements.hijriDate.innerHTML = `
-                    <span style="color: var(--text-secondary);">Unable to load Hijri date</span>
-                    <button onclick="updateDates()" class="retry-button" style="margin-left: 10px; padding: 2px 8px; font-size: 0.8rem;">
-                        Retry
-                    </button>
-                `;
-            }
+            console.error('Error with Hijri date API:', error);
+            elements.hijriDate.innerHTML = `
+                <span style="color: var(--text-secondary);">Unable to load Hijri date</span>
+                <button onclick="updateDates()" class="retry-button" style="margin-left: 10px; padding: 2px 8px; font-size: 0.8rem;">
+                    Retry
+                </button>
+            `;
         }
     };
 
-    fetchHijriDate();
+    await fetchHijriDate();
 }
 
 // Prayer Times Functions
@@ -624,7 +1103,7 @@ async function loadPrayerTimes() {
     if (!userLocation) {
         elements.prayerTimes.innerHTML = `
             <div class="error-message">
-                Location not available. Please allow location access and refresh the page.
+                Location not available. Please allow location access to get accurate prayer times.
                 <button onclick="window.location.reload()" class="retry-button">Refresh Page</button>
             </div>
         `;
@@ -634,17 +1113,22 @@ async function loadPrayerTimes() {
     try {
         elements.prayerTimes.innerHTML = `<div class="loading">Loading prayer times...</div>`;
 
-        // Get location name using reverse geocoding
-        let locationName = "Mecca"; // Default location name
-        try {
-            const geocodeResponse = await fetch(
-                `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${userLocation.latitude}&longitude=${userLocation.longitude}`
-            );
-            const geocodeData = await geocodeResponse.json();
-            locationName = geocodeData.city || geocodeData.locality || "Unknown Location";
-        } catch (error) {
-            console.error('Error getting location name:', error);
-        }
+        // Add VPN warning if location verification failed
+        let locationInfo = `
+            <div class="location-title">
+                <i class="fas fa-map-marker-alt"></i>
+                ${userLocation.locationName}
+            </div>
+            <div class="coordinates">
+                ${userLocation.latitude.toFixed(4)}°, ${userLocation.longitude.toFixed(4)}°
+            </div>
+            ${!userLocation.verified ? `
+                <div class="warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    You may be using a VPN. Prayer times might not be accurate.
+                </div>
+            ` : ''}
+        `;
 
         // Use a simpler endpoint with coordinates
         const response = await fetch(
@@ -672,12 +1156,12 @@ async function loadPrayerTimes() {
         const timings = data.data[today].timings;
 
         const prayerNames = {
-            Fajr: 'Fajr',
-            Sunrise: 'Sunrise',
-            Dhuhr: 'Dhuhr',
-            Asr: 'Asr',
-            Maghrib: 'Maghrib',
-            Isha: 'Isha'
+            Fajr: { name: 'Fajr', icon: 'fa-sun' },
+            Sunrise: { name: 'Sunrise', icon: 'fa-sunrise' },
+            Dhuhr: { name: 'Dhuhr', icon: 'fa-sun' },
+            Asr: { name: 'Asr', icon: 'fa-sun' },
+            Maghrib: { name: 'Maghrib', icon: 'fa-moon' },
+            Isha: { name: 'Isha', icon: 'fa-moon' }
         };
 
         // Format the times (remove timezone information)
@@ -690,16 +1174,17 @@ async function loadPrayerTimes() {
 
         const prayerTimesHTML = `
             <div class="location-info">
-                Prayer times for: ${locationName}
-                <small>(${userLocation.latitude.toFixed(4)}, ${userLocation.longitude.toFixed(4)})</small>
+                ${locationInfo}
             </div>
             ${Object.entries(prayerNames)
-                .map(([key, name]) => {
+                .map(([key, { name, icon }]) => {
                     const time = formattedTimings[key];
                     if (!time) return '';
                     return `
                         <div class="prayer-time">
-                            <div class="prayer-name">${name}</div>
+                            <div class="prayer-name">
+                                <i class="fas ${icon}"></i> ${name}
+                            </div>
                             <div class="prayer-time-value">${time}</div>
                         </div>
                     `;
@@ -727,13 +1212,21 @@ async function loadPrayerTimes() {
 
         elements.prayerTimes.innerHTML = `
             <div class="location-info">
-                Prayer times for: Mecca (Default)
-                <small>(21.4225, 39.8262)</small>
+                <div class="location-title">
+                    <i class="fas fa-mosque"></i>
+                    Mecca (Default)
+                </div>
+                <div class="coordinates">
+                    21.4225°, 39.8262°
+                </div>
             </div>
             ${Object.entries(staticTimes)
                 .map(([name, time]) => `
                     <div class="prayer-time">
-                        <div class="prayer-name">${name}</div>
+                        <div class="prayer-name">
+                            <i class="fas ${name === 'Fajr' || name === 'Sunrise' || name === 'Dhuhr' || name === 'Asr' ? 'fa-sun' : 'fa-moon'}"></i>
+                            ${name}
+                        </div>
                         <div class="prayer-time-value">${time}</div>
                         <small class="static-note">(Approximate)</small>
                     </div>
@@ -750,21 +1243,117 @@ async function loadPrayerTimes() {
 
 function updateNextPrayer(timings) {
     const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    
     const prayerTimes = Object.entries(timings)
         .filter(([name]) => ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].includes(name))
         .map(([name, time]) => {
-            const [hours, minutes] = time.split(':');
-            const prayerTime = new Date();
-            prayerTime.setHours(hours, minutes, 0);
-            return { name, time: prayerTime };
+            const [hours, minutes] = time.split(':').map(Number);
+            return { name, minutes: hours * 60 + minutes };
         });
 
-    const nextPrayer = prayerTimes.find(prayer => prayer.time > now) || prayerTimes[0];
-    const timeUntil = nextPrayer.time - now;
-    const hours = Math.floor(timeUntil / (1000 * 60 * 60));
-    const minutes = Math.floor((timeUntil % (1000 * 60 * 60)) / (1000 * 60));
+    // Sort prayers by time
+    prayerTimes.sort((a, b) => a.minutes - b.minutes);
 
-    elements.nextPrayer.textContent = `Next Prayer: ${nextPrayer.name} in ${hours}h ${minutes}m`;
+    // Find current and next prayer
+    let currentPrayer = prayerTimes[prayerTimes.length - 1];
+    let nextPrayer = prayerTimes[0];
+    let progress = 0;
+
+    for (let i = 0; i < prayerTimes.length; i++) {
+        if (prayerTimes[i].minutes > currentTime) {
+            nextPrayer = prayerTimes[i];
+            currentPrayer = prayerTimes[i - 1] || prayerTimes[prayerTimes.length - 1];
+            break;
+        }
+    }
+
+    // Calculate time until next prayer
+    let minutesUntil = nextPrayer.minutes - currentTime;
+    if (minutesUntil < 0) {
+        minutesUntil += 24 * 60; // Add 24 hours if it's tomorrow
+    }
+
+    // Calculate total interval and progress
+    let totalInterval;
+    if (nextPrayer.minutes < currentPrayer.minutes) {
+        totalInterval = (24 * 60) - (currentPrayer.minutes - nextPrayer.minutes);
+    } else {
+        totalInterval = nextPrayer.minutes - currentPrayer.minutes;
+    }
+
+    let elapsed = currentTime - currentPrayer.minutes;
+    if (elapsed < 0) {
+        elapsed += 24 * 60;
+    }
+
+    progress = (elapsed / totalInterval) * 100;
+
+    // Format times for display
+    const formatTime = (minutes) => {
+        const hours = Math.floor(minutes / 60) % 24;
+        const mins = minutes % 60;
+        return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    };
+
+    // Update next prayer display
+    const hours = Math.floor(minutesUntil / 60);
+    const minutes = minutesUntil % 60;
+    let timeString = '';
+    if (hours > 0) {
+        timeString += `${hours}h `;
+    }
+    timeString += `${minutes}m`;
+
+    elements.nextPrayer.innerHTML = `
+        <i class="fas ${nextPrayer.name === 'Fajr' ? 'fa-sun' : 'fa-moon'}"></i>
+        Next: ${nextPrayer.name} in ${timeString}
+    `;
+
+    // Create standalone progress bar
+    const progressBar = `
+        <div class="prayer-progress-standalone active">
+            <div class="progress-title">Prayer Time Progress</div>
+            <div class="progress-label">
+                <span class="current">${currentPrayer.name}</span> → 
+                <span class="next">${nextPrayer.name}</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: ${progress}%"></div>
+            </div>
+            <div class="progress-times">
+                <span>${formatTime(currentPrayer.minutes)}</span>
+                <span>${formatTime(nextPrayer.minutes)}</span>
+            </div>
+            <div class="progress-label" style="margin-top: 1rem;">
+                ${timeString} until ${nextPrayer.name}
+            </div>
+        </div>
+    `;
+
+    // Add the progress bar to the prayer grid
+    const prayerGrid = document.querySelector('.prayer-grid');
+    
+    // Remove existing progress bar if it exists
+    const existingProgressBar = document.querySelector('.prayer-progress-standalone');
+    if (existingProgressBar) {
+        existingProgressBar.remove();
+    }
+    
+    // Add new progress bar
+    prayerGrid.insertAdjacentHTML('beforeend', progressBar);
+}
+
+// Update the progress bar every minute
+function startProgressUpdates() {
+    setInterval(() => {
+        const progressBar = document.querySelector('.prayer-progress-standalone .progress-bar');
+        if (progressBar) {
+            const currentWidth = parseFloat(progressBar.style.width);
+            const newWidth = Math.min(currentWidth + (100 / (60 * 24)), 100); // Increment by one minute's worth
+            progressBar.style.width = `${newWidth}%`;
+        }
+    }, 60000); // Update every minute
 }
 
 // Qibla Direction Functions
@@ -773,8 +1362,19 @@ async function loadQiblaDirection() {
 
     try {
         const response = await fetch(
-            `http://api.aladhan.com/v1/qibla/${userLocation.latitude}/${userLocation.longitude}`
+            `https://api.aladhan.com/v1/qibla/${userLocation.latitude}/${userLocation.longitude}`,
+            {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }
         );
+        
+        if (!response.ok) {
+            throw new Error(`Failed to load Qibla direction: ${response.status}`);
+        }
+        
         const data = await response.json();
         qiblaDirection = data.data.direction;
         elements.qiblaAngle.textContent = `Qibla Direction: ${Math.round(qiblaDirection)}°`;
@@ -784,6 +1384,14 @@ async function loadQiblaDirection() {
         }
     } catch (error) {
         console.error('Error loading qibla direction:', error);
+        elements.qiblaAngle.innerHTML = `
+            <div class="error-message">
+                Unable to load Qibla direction. Please try again.
+                <button onclick="loadQiblaDirection()" class="retry-button">
+                    Retry
+                </button>
+            </div>
+        `;
     }
 }
 
@@ -988,10 +1596,10 @@ async function loadDua() {
 // Islamic Events Functions
 async function loadIslamicEvents() {
     const events = [
-        { name: 'Ramadan', date: '2024-03-10', description: 'Month of fasting' },
-        { name: 'Eid al-Fitr', date: '2024-04-09', description: 'Festival of breaking the fast' },
-        { name: 'Eid al-Adha', date: '2024-06-16', description: 'Festival of sacrifice' },
-        // Add more events
+        { name: 'Ramadan', date: '2024-02-28', description: 'Month of fasting' },
+        { name: 'Laylat al-Qadr', date: '2024-03-23', description: 'Night of Power' },
+        { name: 'Eid al-Fitr', date: '2024-03-29', description: 'Festival of breaking the fast' },
+        { name: 'Eid al-Adha', date: '2024-06-17', description: 'Festival of sacrifice' }
     ];
 
     elements.eventsContainer.innerHTML = events
@@ -1043,10 +1651,14 @@ function navigateToPage(pageId) {
         pages[pageId].classList.add('active');
     }
 
-    // Handle logo section visibility
+    // Show/hide logo section based on page
     const logoSection = document.querySelector('.logo-section.home-only');
     if (logoSection) {
-        logoSection.style.display = pageId === 'home' ? 'flex' : 'none';
+        if (pageId === 'home') {
+            logoSection.style.display = 'flex';
+        } else {
+            logoSection.style.display = 'none';
+        }
     }
 
     // Scroll to top
@@ -1069,6 +1681,132 @@ function navigateToPage(pageId) {
         case 'events':
             loadIslamicEvents();
             break;
+    }
+}
+
+// Add these new functions
+function initializeCalendarCalculator() {
+    // Check if elements exist before trying to populate them
+    if (!elements.hijriDay || !elements.hijriMonth || !elements.hijriYear) {
+        console.warn('Calendar calculator elements not found');
+        return;
+    }
+
+    // Populate Hijri date dropdowns
+    populateHijriDropdowns();
+    
+    // Set default Gregorian date to today
+    if (elements.gregorianDateInput) {
+        const today = new Date();
+        elements.gregorianDateInput.valueAsDate = today;
+    }
+    
+    // Add event listeners if elements exist
+    if (elements.convertToHijri) {
+        elements.convertToHijri.addEventListener('click', convertGregorianToHijri);
+    }
+    if (elements.convertToGregorian) {
+        elements.convertToGregorian.addEventListener('click', convertHijriToGregorian);
+    }
+}
+
+function populateHijriDropdowns() {
+    if (!elements.hijriDay || !elements.hijriMonth || !elements.hijriYear) {
+        console.warn('Hijri dropdown elements not found');
+        return;
+    }
+
+    // Clear existing options
+    elements.hijriDay.innerHTML = '';
+    elements.hijriMonth.innerHTML = '';
+    elements.hijriYear.innerHTML = '';
+    
+    // Days (1-30)
+    for (let i = 1; i <= 30; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = i;
+        elements.hijriDay.appendChild(option);
+    }
+    
+    // Months
+    const hijriMonths = [
+        'Muharram', 'Safar', 'Rabi al-Awwal', 'Rabi al-Thani',
+        'Jumada al-Awwal', 'Jumada al-Thani', 'Rajab', "Sha'ban",
+        'Ramadan', 'Shawwal', 'Dhu al-Qadah', 'Dhu al-Hijjah'
+    ];
+    
+    hijriMonths.forEach((month, index) => {
+        const option = document.createElement('option');
+        option.value = index + 1;
+        option.textContent = month;
+        elements.hijriMonth.appendChild(option);
+    });
+    
+    // Years (1400-1500 AH)
+    for (let i = 1400; i <= 1500; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = i + ' AH';
+        elements.hijriYear.appendChild(option);
+    }
+}
+
+async function convertGregorianToHijri() {
+    try {
+        elements.hijriResult.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting...';
+        
+        const gregorianDate = elements.gregorianDateInput.value;
+        const response = await fetch(`https://api.aladhan.com/v1/gToH/${gregorianDate}`);
+        
+        if (!response.ok) {
+            throw new Error('Failed to convert date');
+        }
+        
+        const data = await response.json();
+        const hijri = data.data.hijri;
+        
+        elements.hijriResult.textContent = 
+            `${hijri.day} ${hijri.month.en} ${hijri.year} AH`;
+            
+    } catch (error) {
+        console.error('Error converting date:', error);
+        elements.hijriResult.innerHTML = 
+            '<span class="error"><i class="fas fa-exclamation-circle"></i> Error converting date</span>';
+    }
+}
+
+async function convertHijriToGregorian() {
+    try {
+        elements.gregorianResult.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting...';
+        
+        const day = elements.hijriDay.value;
+        const month = elements.hijriMonth.value;
+        const year = elements.hijriYear.value;
+        
+        const response = await fetch(
+            `https://api.aladhan.com/v1/hToG/${day}-${month}-${year}`
+        );
+        
+        if (!response.ok) {
+            throw new Error('Failed to convert date');
+        }
+        
+        const data = await response.json();
+        const gregorian = data.data.gregorian;
+        
+        elements.gregorianResult.textContent = 
+            new Date(gregorian.date).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+    } catch (error) {
+        console.error('Error converting date:', error);
+        elements.gregorianResult.innerHTML = 
+            '<span class="error"><i class="fas fa-exclamation-circle"></i> Error converting date</span>';
     }
 }
 
