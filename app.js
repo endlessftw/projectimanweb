@@ -177,7 +177,13 @@ async function createDayElement(date, isDifferentMonth, hijriDate, isToday = fal
             
             if (date <= threeMonthsFromNow) {
                 const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-                const response = await fetch(`https://api.aladhan.com/v1/gToH/${formattedDate}`);
+                const response = await fetch(`https://api.aladhan.com/v1/gToH/${formattedDate}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
                 if (response.ok) {
                     const data = await response.json();
                     if (data && data.data && data.data.hijri) {
@@ -859,17 +865,33 @@ function applyUserPreferences() {
 
 // Service Worker Registration
 async function registerServiceWorker() {
-    // Only register service worker if we're on HTTPS or localhost
-    if ('serviceWorker' in navigator && 
-        (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+    if ('serviceWorker' in navigator) {
         try {
-            await navigator.serviceWorker.register('service-worker.js');
+            // First try to load the manifest
+            try {
+                const manifestResponse = await fetch('manifest.json');
+                if (!manifestResponse.ok) {
+                    console.warn('Manifest file not accessible, continuing without it');
+                }
+            } catch (manifestError) {
+                console.warn('Error loading manifest:', manifestError);
+            }
+
+            // Register service worker
+            const registration = await navigator.serviceWorker.register('service-worker.js', {
+                scope: '/'
+            });
             console.log('Service Worker registered successfully');
+            
+            // Force update check
+            if (registration.active) {
+                registration.update();
+            }
         } catch (error) {
             console.error('Service Worker registration failed:', error);
         }
     } else {
-        console.log('Service Worker not registered: requires HTTPS or localhost');
+        console.log('Service Worker not supported in this browser');
     }
 }
 
@@ -1757,17 +1779,25 @@ async function convertGregorianToHijri() {
         elements.hijriResult.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting...';
         
         const gregorianDate = elements.gregorianDateInput.value;
-        const response = await fetch(`https://api.aladhan.com/v1/gToH/${gregorianDate}`);
+        const response = await fetch(`https://api.islamicfinder.org/v1/calendar?date=${gregorianDate}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
         
         if (!response.ok) {
             throw new Error('Failed to convert date');
         }
         
         const data = await response.json();
-        const hijri = data.data.hijri;
+        if (!data || !data.hijri) {
+            throw new Error('Invalid response format');
+        }
         
         elements.hijriResult.textContent = 
-            `${hijri.day} ${hijri.month.en} ${hijri.year} AH`;
+            `${data.hijri.day} ${data.hijri.month} ${data.hijri.year} AH`;
             
     } catch (error) {
         console.error('Error converting date:', error);
@@ -1785,7 +1815,13 @@ async function convertHijriToGregorian() {
         const year = elements.hijriYear.value;
         
         const response = await fetch(
-            `https://api.aladhan.com/v1/hToG/${day}-${month}-${year}`
+            `https://api.islamicfinder.org/v1/calendar/hijri/${year}/${month}/${day}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            }
         );
         
         if (!response.ok) {
@@ -1793,10 +1829,12 @@ async function convertHijriToGregorian() {
         }
         
         const data = await response.json();
-        const gregorian = data.data.gregorian;
+        if (!data || !data.gregorian) {
+            throw new Error('Invalid response format');
+        }
         
         elements.gregorianResult.textContent = 
-            new Date(gregorian.date).toLocaleDateString('en-US', {
+            new Date(data.gregorian.date).toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
