@@ -1,0 +1,839 @@
+:root {
+    --primary-color: #00b4d8;
+    --secondary-color: #48cae4;
+    --accent-color: #ffd700;
+    --background-color: #121212;
+    --card-background: #1e1e1e;
+    --text-color: #ffffff;
+    --text-secondary: #90caf9;
+    --border-color: #2a2a2a;
+    --success-color: #4caf50;
+    --error-color: #f44336;
+    --gold: #ffd700;
+    --emerald: #50c878;
+    --sapphire: #0f52ba;
+}
+
+[data-theme="dark"] {
+    --primary-color: #64b5f6;
+    --secondary-color: #b2ebf2;
+    --background-color: #121212;
+    --text-color: #ffffff;
+    --card-background: #1e1e1e;
+    --border-color: #2a2a2a;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.app-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header Styles */
+.navbar {
+    padding: 1rem 0;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 2rem;
+}
+
+.nav-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.logo-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem 0;
+    margin-bottom: 1rem;
+    gap: 0.5rem;
+}
+
+.logo-section.home-only {
+    display: none;
+}
+
+#home-page.active .logo-section.home-only {
+    display: flex;
+}
+
+.nav-logo {
+    display: none;
+    height: 35px;
+    width: auto;
+    margin-right: 1.5rem;
+    object-fit: contain;
+}
+
+.page:not(#home-page) .nav-logo {
+    display: block;
+}
+
+#home-page .nav-logo {
+    display: none;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    height: 400px;
+    background: var(--background-color);
+    transition: all 0.3s ease;
+    opacity: 0;
+    animation: fadeInScale 1s ease-out 0.5s forwards;
+}
+
+.logo {
+    height: 100%;
+    width: auto;
+    max-width: 800px;
+    object-fit: contain;
+    filter: none;
+    transition: transform 0.3s ease;
+    display: block;
+}
+
+.logo:hover {
+    transform: scale(1.02);
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.theme-toggle {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0.5rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+    background-color: var(--card-background);
+}
+
+.theme-toggle i {
+    transition: transform 0.3s ease;
+}
+
+.theme-toggle:hover i {
+    transform: rotate(15deg);
+}
+
+/* Search Section */
+.search-section {
+    margin-bottom: 2rem;
+}
+
+.search-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+
+#searchInput {
+    flex: 1;
+    padding: 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--card-background);
+    color: var(--text-color);
+}
+
+#searchButton {
+    padding: 0.8rem 1.5rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.category-filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.category-tag {
+    padding: 0.5rem 1rem;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.category-tag.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Grid Layout */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+
+/* Card Styles */
+.card {
+    background-color: var(--card-background);
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card h2 {
+    color: var(--accent-color);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Prayer Times Section */
+.prayer-times {
+    position: relative;
+    background-color: var(--card-background);
+    z-index: 1;
+}
+
+.prayer-times::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(90deg, #ff0000, #00ff00, #0000ff, #ff0000);
+    background-size: 400% 400%;
+    border-radius: 17px;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.prayer-times::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--card-background);
+    border-radius: 15px;
+    z-index: -1;
+}
+
+.prayer-times:hover::before {
+    opacity: 1;
+    animation: borderGlow 3s linear infinite;
+}
+
+@keyframes borderGlow {
+    0% {
+        background-position: 0% 50%;
+    }
+    100% {
+        background-position: 400% 50%;
+    }
+}
+
+.prayer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+}
+
+.prayer-time {
+    background-color: var(--background-color);
+    padding: 1rem;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.prayer-name {
+    color: var(--accent-color);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.next-prayer {
+    margin-top: 1rem;
+    text-align: center;
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+/* Qibla Direction */
+.compass-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+}
+
+.compass {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-color);
+    position: relative;
+    margin: 1rem 0;
+}
+
+.arrow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 100px;
+    background-color: var(--accent-color);
+    transform-origin: bottom center;
+    transform: translate(-50%, -100%);
+}
+
+/* Quran Section */
+.quran-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+#surahSelect {
+    padding: 0.5rem;
+    border-radius: 5px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.quran-text {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 1rem;
+    background-color: var(--background-color);
+    border-radius: 10px;
+    direction: rtl;
+    text-align: right;
+    line-height: 2;
+}
+
+.audio-controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+/* Tasbih Counter */
+.tasbih-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.counter-display {
+    font-size: 3rem;
+    color: var(--accent-color);
+    font-weight: 700;
+}
+
+.tasbih-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.dhikr-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.dhikr-button {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dhikr-button.active {
+    background-color: var(--accent-color);
+    color: var(--background-color);
+}
+
+/* Buttons */
+.primary-button {
+    padding: 0.8rem 1.5rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.secondary-button {
+    padding: 0.8rem 1.5rem;
+    background-color: transparent;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* Events Section */
+.events-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.event-card {
+    background-color: var(--background-color);
+    padding: 1rem;
+    border-radius: 10px;
+    border-left: 4px solid var(--accent-color);
+}
+
+.event-date {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--background-color);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0.5rem 0;
+    }
+
+    .logo-section {
+        padding: 0.5rem 0;
+        gap: 0.25rem;
+    }
+
+    .logo-container {
+        height: 200px;
+        padding: 0;
+    }
+    
+    .logo {
+        max-width: 400px;
+    }
+
+    .nav-content {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .nav-right {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .welcome-text {
+        font-size: 1.8rem;
+        margin-bottom: -0.25rem;
+        letter-spacing: 1.5px;
+    }
+    
+    .tagline {
+        font-size: 1.5rem;
+        margin-top: -0.25rem;
+        letter-spacing: 1px;
+    }
+
+    .nav-logo {
+        height: 30px;
+        margin-right: 0.5rem;
+    }
+
+    .nav-left {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .nav-links {
+        margin-left: 0;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .logo-section.home-only {
+        display: none;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Add these styles after the prayer-time styles */
+
+.loading {
+    text-align: center;
+    padding: 1rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.error-message {
+    text-align: center;
+    padding: 1rem;
+    color: var(--error-color);
+    background-color: var(--background-color);
+    border-radius: 8px;
+    margin: 0.5rem 0;
+}
+
+.retry-button {
+    display: block;
+    margin: 1rem auto 0;
+    padding: 0.5rem 1rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.retry-button:hover {
+    background-color: var(--secondary-color);
+}
+
+.location-info {
+    text-align: center;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    background-color: var(--background-color);
+    border-radius: 8px;
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.location-info small {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+.welcome-text {
+    font-family: 'Raleway', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: var(--text-color);
+    text-align: center;
+    letter-spacing: 2px;
+    opacity: 0;
+    text-transform: uppercase;
+    margin-bottom: -0.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.1em;
+    animation: fadeInDown 1s ease-out forwards;
+}
+
+.welcome-text .letter {
+    display: inline-block;
+    transition: transform 0.3s ease;
+    cursor: default;
+    opacity: 0;
+    animation: fadeInLetter 0.5s ease-out forwards;
+}
+
+.welcome-text .letter:hover {
+    transform: translateY(-5px);
+}
+
+.welcome-text .letter {
+    position: relative;
+}
+
+.welcome-text .letter::after {
+    content: attr(data-letter);
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: #ff0000;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.welcome-text .letter:hover::after {
+    opacity: 1;
+    animation: rgbTextHover 2s linear infinite;
+}
+
+@keyframes rgbTextHover {
+    0%, 100% {
+        color: #ff0000;
+        text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+    }
+    33% {
+        color: #00ff00;
+        text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    }
+    66% {
+        color: #0000ff;
+        text-shadow: 0 0 10px rgba(0, 0, 255, 0.5);
+    }
+}
+
+.tagline {
+    font-family: 'Raleway', sans-serif;
+    font-size: 2rem;
+    font-weight: 300;
+    color: var(--accent-color);
+    text-align: center;
+    letter-spacing: 1.5px;
+    opacity: 0;
+    margin-top: -0.5rem;
+    position: relative;
+    width: 22ch;
+    white-space: nowrap;
+    overflow: hidden;
+    border-right: 2px solid var(--accent-color);
+    animation: typing 3s steps(22) 1s forwards,
+               blinkCursor 0.7s step-end infinite;
+}
+
+@keyframes typing {
+    0% { 
+        width: 0;
+        opacity: 1;
+    }
+    100% { 
+        width: 22ch;
+        opacity: 1;
+    }
+}
+
+@keyframes blinkCursor {
+    from, to { border-color: transparent }
+    50% { border-color: var(--accent-color) }
+}
+
+@media (max-width: 768px) {
+    .tagline {
+        font-size: 1.5rem;
+        width: 22ch;
+        animation: typing 2s steps(22) 0.7s forwards,
+                   blinkCursor 0.7s step-end infinite;
+    }
+}
+
+/* Navigation Styles */
+.nav-links {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-left: 1rem;
+}
+
+.nav-link {
+    color: var(--text-color);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 400;
+    opacity: 0.8;
+}
+
+.nav-link:hover {
+    opacity: 1;
+    background-color: var(--card-background);
+}
+
+.nav-link.active {
+    color: var(--accent-color);
+    opacity: 1;
+    background-color: var(--card-background);
+}
+
+/* Page Styles */
+.page {
+    display: none;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.page.active {
+    display: block;
+}
+
+/* Responsive Navigation */
+@media (max-width: 768px) {
+    .nav-links {
+        width: 100%;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .nav-link {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInLetter {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.welcome-text .letter:nth-child(1) { animation-delay: 0.1s; }
+.welcome-text .letter:nth-child(2) { animation-delay: 0.2s; }
+.welcome-text .letter:nth-child(3) { animation-delay: 0.3s; }
+.welcome-text .letter:nth-child(4) { animation-delay: 0.4s; }
+.welcome-text .letter:nth-child(5) { animation-delay: 0.5s; }
+.welcome-text .letter:nth-child(6) { animation-delay: 0.6s; }
+.welcome-text .letter:nth-child(7) { animation-delay: 0.7s; }
+.welcome-text .letter:nth-child(8) { animation-delay: 0.8s; }
+.welcome-text .letter:nth-child(9) { animation-delay: 0.9s; }
+.welcome-text .letter:nth-child(10) { animation-delay: 1s; }
+
+/* Add mobile animation adjustments */
+@media (max-width: 768px) {
+    .welcome-text, .logo-container, .tagline {
+        animation-duration: 0.7s;
+    }
+    
+    .welcome-text .letter {
+        animation-duration: 0.3s;
+    }
+    
+    .welcome-text .letter:nth-child(1) { animation-delay: 0.05s; }
+    .welcome-text .letter:nth-child(2) { animation-delay: 0.1s; }
+    .welcome-text .letter:nth-child(3) { animation-delay: 0.15s; }
+    .welcome-text .letter:nth-child(4) { animation-delay: 0.2s; }
+    .welcome-text .letter:nth-child(5) { animation-delay: 0.25s; }
+    .welcome-text .letter:nth-child(6) { animation-delay: 0.3s; }
+    .welcome-text .letter:nth-child(7) { animation-delay: 0.35s; }
+    .welcome-text .letter:nth-child(8) { animation-delay: 0.4s; }
+    .welcome-text .letter:nth-child(9) { animation-delay: 0.45s; }
+    .welcome-text .letter:nth-child(10) { animation-delay: 0.5s; }
+} 

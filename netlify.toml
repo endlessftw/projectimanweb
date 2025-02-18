@@ -1,0 +1,11 @@
+[build]
+  publish = "."
+  command = ""
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production.environment]
+  API_URL = "YOUR_RENDER_BACKEND_URL/api" 

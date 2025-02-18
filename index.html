@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Iman - Prayer Times, Qibla, Quran & More</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="dark-mode">
+    <div class="app-container">
+        <header>
+            <nav class="navbar">
+                <div class="nav-content">
+                    <div class="nav-left">
+                        <img src="assets/images/projectlogo.png" alt="Project Logo" class="nav-logo">
+                        <div class="nav-links">
+                            <a href="#" class="nav-link active" data-page="home">Home</a>
+                            <a href="#" class="nav-link" data-page="qibla">Qibla Direction</a>
+                            <a href="#" class="nav-link" data-page="quran">Quran</a>
+                            <a href="#" class="nav-link" data-page="hadith">Daily Hadith</a>
+                            <a href="#" class="nav-link" data-page="dua">Dua of the Day</a>
+                            <a href="#" class="nav-link" data-page="tasbih">Tasbih Counter</a>
+                            <a href="#" class="nav-link" data-page="events">Islamic Events</a>
+                        </div>
+                    </div>
+                    <div class="nav-right">
+                        <button id="themeToggle" class="theme-toggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <div class="date-display">
+                            <span id="hijriDate"></span>
+                            <span id="gregorianDate"></span>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <div class="logo-section home-only">
+                <h1 class="welcome-text">
+                    <span class="letter" data-letter="W">W</span>
+                    <span class="letter" data-letter="e">e</span>
+                    <span class="letter" data-letter="l">l</span>
+                    <span class="letter" data-letter="c">c</span>
+                    <span class="letter" data-letter="o">o</span>
+                    <span class="letter" data-letter="m">m</span>
+                    <span class="letter" data-letter="e">e</span>
+                    <span class="letter" data-letter=" ">&nbsp;</span>
+                    <span class="letter" data-letter="t">t</span>
+                    <span class="letter" data-letter="o">o</span>
+                </h1>
+                <div class="logo-container">
+                    <img src="assets/images/projectlogo.png" alt="Project Logo" class="logo">
+                </div>
+                <div style="display: flex; justify-content: center; width: 100%;">
+                    <h2 class="tagline">Every Muslim's Homepage</h2>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Home Page -->
+            <div class="page active" id="home-page">
+                <div class="grid-container">
+                    <!-- Prayer Times Section -->
+                    <section class="card prayer-times">
+                        <h2><i class="fas fa-clock"></i> Prayer Times</h2>
+                        <div id="prayerTimes" class="prayer-grid">
+                            <!-- Prayer times will be dynamically added here -->
+                        </div>
+                        <div id="nextPrayer" class="next-prayer">
+                            <!-- Next prayer countdown will be shown here -->
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Qibla Direction Page -->
+            <div class="page" id="qibla-page">
+                <section class="card qibla-direction">
+                    <h2><i class="fas fa-compass"></i> Qibla Direction</h2>
+                    <div id="qiblaCompass" class="compass-container">
+                        <div class="compass">
+                            <div class="arrow"></div>
+                        </div>
+                        <p id="qiblaAngle"></p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Quran Page -->
+            <div class="page" id="quran-page">
+                <section class="card quran-section">
+                    <h2><i class="fas fa-book-open"></i> Quran</h2>
+                    <div class="quran-container">
+                        <select id="surahSelect">
+                            <!-- Surahs will be dynamically added here -->
+                        </select>
+                        <div id="quranText" class="quran-text">
+                            <!-- Quran text will be displayed here -->
+                        </div>
+                        <div id="audioPlayer" class="audio-controls">
+                            <!-- Audio controls will be added here -->
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Hadith Page -->
+            <div class="page" id="hadith-page">
+                <section class="card hadith-section">
+                    <h2><i class="fas fa-scroll"></i> Daily Hadith</h2>
+                    <div id="hadithContent">
+                        <!-- Daily hadith will be displayed here -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- Dua Page -->
+            <div class="page" id="dua-page">
+                <section class="card dua-section">
+                    <h2><i class="fas fa-pray"></i> Dua of the Day</h2>
+                    <div id="duaContent">
+                        <!-- Daily dua will be displayed here -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- Tasbih Counter Page -->
+            <div class="page" id="tasbih-page">
+                <section class="card tasbih-section">
+                    <h2><i class="fas fa-circle"></i> Tasbih Counter</h2>
+                    <div class="tasbih-container">
+                        <div class="counter-display">
+                            <span id="tasbihCount">0</span>
+                        </div>
+                        <div class="tasbih-buttons">
+                            <button id="tasbihButton" class="primary-button">
+                                SubhanAllah
+                            </button>
+                            <button id="resetTasbih" class="secondary-button">
+                                Reset
+                            </button>
+                        </div>
+                        <div class="dhikr-selector">
+                            <button class="dhikr-button active" data-dhikr="SubhanAllah">SubhanAllah</button>
+                            <button class="dhikr-button" data-dhikr="Alhamdulillah">Alhamdulillah</button>
+                            <button class="dhikr-button" data-dhikr="AllahuAkbar">Allahu Akbar</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Islamic Events Page -->
+            <div class="page" id="events-page">
+                <section class="card events-section">
+                    <h2><i class="fas fa-calendar"></i> Islamic Events</h2>
+                    <div id="eventsContainer">
+                        <!-- Upcoming events will be displayed here -->
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Initialize Supabase client globally
+        const supabaseUrl = 'https://ioqspqqfksgepkqppxlz.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlvcXNwcXFma3NnZXBrcXBweGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk3NDM2MzgsImV4cCI6MjA1NTMxOTYzOH0.jKwNFulEEzoBGU4xqqu5htnlixZ-UIh7hT3Uo5t_IGA';
+        window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    </script>
+    <script src="app.js"></script>
+    <script src="service-worker.js"></script>
+</body>
+</html> 
