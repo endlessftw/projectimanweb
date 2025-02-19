@@ -660,118 +660,383 @@ body {
     }
 }
 
-/* Quran Section */
-.quran-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-#surahSelect {
-    padding: 0.5rem;
-    border-radius: 5px;
+/* Quran Section Styles */
+.quran-section {
+    min-height: 100vh;
     background-color: var(--background-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
+    padding: 2rem;
 }
 
-.quran-text {
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 1rem;
-    background-color: var(--background-color);
-    border-radius: 10px;
-    direction: rtl;
-    text-align: right;
-    line-height: 2;
-}
-
-.audio-controls {
+.quran-header {
     display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-top: 1rem;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
 }
 
-/* Tasbih Counter */
-.tasbih-container {
+.quran-header h2 {
+    color: var(--accent-color);
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    margin: 0;
     display: flex;
-    flex-direction: column;
     align-items: center;
     gap: 1rem;
 }
 
-.counter-display {
-    font-size: 3rem;
-    color: var(--accent-color);
-    font-weight: 700;
+.surah-selector {
+    position: relative;
+    min-width: 300px;
 }
 
-.tasbih-buttons {
-    display: flex;
-    gap: 1rem;
-}
-
-.dhikr-selector {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: center;
-}
-
-.dhikr-button {
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    border: 1px solid var(--border-color);
-    background-color: var(--background-color);
+.surah-dropdown {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.1rem;
+    background-color: var(--card-background);
     color: var(--text-color);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.dhikr-button.active {
+.surah-dropdown:hover {
+    border-color: var(--accent-color);
+}
+
+.quran-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: var(--card-background);
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.quran-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background-color: var(--background-color);
+    border-radius: 8px;
+}
+
+.font-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: var(--text-color);
+}
+
+.control-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.control-btn:hover {
     background-color: var(--accent-color);
     color: var(--background-color);
+    border-color: var(--accent-color);
 }
 
-/* Buttons */
-.primary-button {
-    padding: 0.8rem 1.5rem;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
+.bismillah {
+    text-align: center;
+    font-size: 3rem;
+    color: var(--accent-color);
+    margin: 2rem 0;
+    font-family: 'Scheherazade New', serif;
 }
 
-.secondary-button {
-    padding: 0.8rem 1.5rem;
-    background-color: transparent;
+.surah-title {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.arabic-title {
+    font-size: 2.5rem;
     color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    margin-bottom: 0.5rem;
+    font-family: 'Scheherazade New', serif;
 }
 
-/* Events Section */
-.events-container {
+.surah-info {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.quran-text {
+    max-height: none;
+    padding: 2rem;
+    background-color: var(--background-color);
+    border-radius: 12px;
+    line-height: 2.5;
+    font-size: 1.5rem;
+    font-family: 'Scheherazade New', serif;
+}
+
+.ayah {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border-radius: 12px;
+    background-color: var(--card-background);
+    transition: all 0.3s ease;
 }
 
-.event-card {
+.ayah:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.ayah-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding: 0.8rem;
     background-color: var(--background-color);
-    padding: 1rem;
-    border-radius: 10px;
-    border-left: 4px solid var(--accent-color);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    transition: border-color 0.3s ease;
 }
 
-.event-date {
-    color: var(--text-secondary);
+.ayah-header:hover {
+    border-color: var(--accent-color);
+}
+
+.ayah-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    background-color: var(--accent-color);
+    color: var(--background-color);
+    border-radius: 50%;
+    font-size: 1rem;
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ayah-audio {
+    flex: 1;
+    margin-left: 1rem;
+    max-width: 500px;
+    position: relative;
+}
+
+.ayah-audio audio {
+    width: 100%;
+    height: 40px;
+    border-radius: 20px;
+    background-color: var(--background-color);
+    outline: none;
+}
+
+/* Styling the audio player controls */
+.ayah-audio audio::-webkit-media-controls-panel {
+    background-color: var(--card-background);
+    border-radius: 20px;
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ayah-audio audio::-webkit-media-controls-current-time-display,
+.ayah-audio audio::-webkit-media-controls-time-remaining-display {
+    color: var(--text-color);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 13px;
+    min-width: 45px;
+    text-align: center;
+}
+
+.ayah-audio audio::-webkit-media-controls-play-button {
+    background-color: var(--accent-color);
+    border-radius: 50%;
+    transform: scale(1.3);
+    transition: transform 0.2s ease;
+}
+
+.ayah-audio audio::-webkit-media-controls-play-button:hover {
+    transform: scale(1.4);
+}
+
+.ayah-audio audio::-webkit-media-controls-timeline {
+    background-color: var(--border-color);
+    border-radius: 10px;
+    height: 6px;
+    margin: 0 15px;
+    overflow: hidden;
+}
+
+.ayah-audio audio::-webkit-media-controls-timeline::-webkit-slider-thumb {
+    background-color: var(--accent-color);
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+}
+
+.ayah-audio audio::-webkit-media-controls-volume-slider {
+    background-color: var(--border-color);
+    border-radius: 10px;
+    padding: 0 8px;
+    height: 4px;
+}
+
+.ayah-audio audio::-webkit-media-controls-mute-button {
+    transform: scale(1.2);
+    transition: transform 0.2s ease;
+}
+
+.ayah-audio audio::-webkit-media-controls-mute-button:hover {
+    transform: scale(1.3);
+}
+
+/* Audio error message styling */
+.audio-error {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--error-color);
     font-size: 0.9rem;
+    font-family: 'Segoe UI', sans-serif;
+    padding: 0.5rem 1rem;
+    background-color: var(--background-color);
+    border-radius: 18px;
+    border: 1px solid var(--error-color);
+}
+
+.audio-error i {
+    color: var(--error-color);
+}
+
+/* Responsive adjustments for audio player */
+@media (max-width: 768px) {
+    .ayah-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+        padding: 1rem;
+    }
+
+    .ayah-audio {
+        margin-left: 0;
+        max-width: 100%;
+    }
+
+    .ayah-audio audio {
+        height: 36px;
+    }
+
+    .ayah-audio audio::-webkit-media-controls-current-time-display,
+    .ayah-audio audio::-webkit-media-controls-time-remaining-display {
+        font-size: 11px;
+    }
+}
+
+.arabic {
+    font-size: 2rem;
+    color: var(--text-color);
+    text-align: right;
+    line-height: 2;
+    margin: 1rem 0;
+}
+
+.translation {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    font-family: 'Playfair Display', serif;
+    text-align: left;
+    line-height: 1.8;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .quran-section {
+        padding: 1rem;
+    }
+
+    .quran-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .quran-header h2 {
+        font-size: 2rem;
+    }
+
+    .surah-selector {
+        min-width: 100%;
+    }
+
+    .quran-container {
+        padding: 1rem;
+    }
+
+    .quran-controls {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .bismillah {
+        font-size: 2.5rem;
+    }
+
+    .arabic-title {
+        font-size: 2rem;
+    }
+
+    .quran-text {
+        font-size: 1.3rem;
+        padding: 1rem;
+    }
+
+    .arabic {
+        font-size: 1.8rem;
+    }
+
+    .translation {
+        font-size: 1rem;
+    }
+
+    .ayah {
+        padding: 1rem;
+    }
+
+    .ayah-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .ayah-audio {
+        margin-left: 0;
+        max-width: 100%;
+    }
 }
 
 /* Scrollbar Styling */
@@ -1218,38 +1483,39 @@ body {
 
 .prayer-progress-standalone {
     background-color: var(--background-color);
-    padding: 1.5rem;
-    border-radius: 12px;
+    padding: 2rem;
+    border-radius: 15px;
     border: 2px solid var(--border-color);
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-height: 180px;
+    min-height: 200px;
     transition: all 0.3s ease;
+    margin-top: 2rem;
 }
 
 .prayer-progress-standalone.active {
     border-color: var(--accent-color);
     transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .progress-title {
     font-family: 'Playfair Display', serif;
     color: var(--accent-color);
-    font-size: 1.2rem;
+    font-size: 1.4rem;
     font-weight: 600;
     text-align: center;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .progress-bar-container {
     width: 100%;
-    height: 6px;
+    height: 8px;
     background-color: var(--border-color);
-    border-radius: 3px;
+    border-radius: 4px;
     position: relative;
-    margin: 1rem 0;
+    margin: 1.5rem 0;
     overflow: hidden;
 }
 
@@ -1258,58 +1524,89 @@ body {
     left: 0;
     top: 0;
     height: 100%;
-    background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
-    border-radius: 3px;
+    background: linear-gradient(90deg, 
+        var(--accent-color) 0%, 
+        var(--primary-color) 50%, 
+        var(--accent-color) 100%);
+    border-radius: 4px;
     transition: width 1s ease;
+    background-size: 200% 100%;
+    animation: gradientFlow 3s linear infinite;
+}
+
+@keyframes gradientFlow {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
 }
 
 .progress-times {
     display: flex;
     justify-content: space-between;
     font-family: 'Roboto Mono', monospace;
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     color: var(--text-secondary);
-    margin-top: 0.5rem;
+    margin-top: 1rem;
 }
 
 .progress-label {
     font-family: 'Playfair Display', serif;
-    font-size: 1rem;
+    font-size: 1.2rem;
     color: var(--text-secondary);
     text-align: center;
     margin: 1rem 0;
+    line-height: 1.6;
 }
 
 .progress-label .current {
     color: var(--accent-color);
     font-weight: 600;
+    font-size: 1.3rem;
 }
 
 .progress-label .next {
     color: var(--primary-color);
     font-weight: 600;
+    font-size: 1.3rem;
 }
 
-@media (max-width: 1200px) {
-    .prayer-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    
-    .prayer-progress-standalone {
-        grid-column: 1 / -1;
-        margin-top: 1rem;
-    }
-}
-
+/* Responsive adjustments */
 @media (max-width: 768px) {
-    .prayer-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .ayah-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+        padding: 1rem;
     }
-}
 
-@media (max-width: 480px) {
-    .prayer-grid {
-        grid-template-columns: 1fr;
+    .ayah-audio {
+        margin-left: 0;
+        max-width: 100%;
+    }
+
+    .ayah-audio audio {
+        height: 36px;
+    }
+
+    .prayer-progress-standalone {
+        padding: 1.5rem;
+        min-height: 180px;
+    }
+
+    .progress-title {
+        font-size: 1.2rem;
+    }
+
+    .progress-times {
+        font-size: 0.9rem;
+    }
+
+    .progress-label {
+        font-size: 1rem;
+    }
+
+    .progress-label .current,
+    .progress-label .next {
+        font-size: 1.1rem;
     }
 }
 
@@ -1416,13 +1713,11 @@ body {
     }
 }
 
-/* Add these new calendar styles */
+/* Calendar Styles */
 .dual-calendar {
-    width: 100%;
     background: var(--card-background);
-    border-radius: 15px;
+    border-radius: 12px;
     padding: 2rem;
-    margin-top: 2rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -1431,14 +1726,11 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
 }
 
 .calendar-header h2 {
-    color: var(--accent-color);
     margin: 0;
-    font-size: 1.5rem;
+    color: var(--text-color);
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -1455,22 +1747,17 @@ body {
     border: none;
     color: var(--text-color);
     cursor: pointer;
-    padding: 0.8rem;
+    padding: 0.5rem;
     border-radius: 50%;
     transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .calendar-nav-btn:hover {
-    background: var(--background-color);
-    transform: scale(1.1);
+    background: var(--primary-color);
+    color: white;
 }
 
 #currentMonth {
-    font-size: 1.2rem;
-    color: var(--text-secondary);
     min-width: 200px;
     text-align: center;
     font-weight: 500;
@@ -1478,24 +1765,21 @@ body {
 
 .calendar-table {
     width: 100%;
-    border-radius: 12px;
+    border-radius: 8px;
     overflow: hidden;
-    background: var(--background-color);
 }
 
 .weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    text-align: center;
-    padding: 1rem;
     background: var(--background-color);
-    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 0;
+    text-align: center;
 }
 
 .weekdays div {
     font-weight: 600;
     color: var(--text-secondary);
-    font-size: 1rem;
 }
 
 .calendar-days {
@@ -1518,29 +1802,18 @@ body {
 }
 
 .calendar-day:hover {
+    background: var(--background-color);
     transform: scale(1.02);
     z-index: 1;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.gregorian-date {
-    font-size: 1.1rem;
-    color: var(--text-color);
-    font-weight: 500;
-}
-
-.hijri-date {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
+.calendar-day.different-month {
+    opacity: 0.5;
 }
 
 .calendar-day.today {
     background: var(--background-color);
     border: 2px solid var(--accent-color);
-}
-
-.calendar-day.different-month {
-    opacity: 0.5;
 }
 
 .calendar-day.friday {
@@ -1551,9 +1824,20 @@ body {
     background: rgba(255, 215, 0, 0.1);
 }
 
-.calendar-day.ramadan .hijri-date {
-    color: var(--accent-color);
-    font-weight: 600;
+.gregorian-date {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.hijri-date {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.hijri-date.estimated {
+    font-style: italic;
+    opacity: 0.8;
 }
 
 .islamic-event {
@@ -1585,7 +1869,7 @@ body {
     }
 
     .gregorian-date {
-        font-size: 1rem;
+        font-size: 0.9rem;
     }
 
     .hijri-date {
@@ -1597,33 +1881,322 @@ body {
         padding: 0.1rem 0.2rem;
     }
 
-    .calendar-header h2 {
-        font-size: 1.2rem;
+    #currentMonth {
+        min-width: 150px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendar-day {
+        min-height: 50px;
+    }
+
+    .gregorian-date {
+        font-size: 0.8rem;
+    }
+
+    .hijri-date {
+        font-size: 0.7rem;
+    }
+
+    .islamic-event {
+        font-size: 0.65rem;
     }
 
     #currentMonth {
-        font-size: 1rem;
-        min-width: 150px;
+        min-width: 120px;
+        font-size: 0.8rem;
     }
 }
 
-.hijri-date.estimated {
-    color: var(--text-secondary);
-    opacity: 0.8;
-    font-style: italic;
-    position: relative;
+/* Hadith Section Styles */
+.hadith-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
 }
 
-.hijri-date.estimated::after {
-    content: " (est.)";
-    font-size: 0.7em;
-    vertical-align: super;
-    color: var(--text-secondary);
+.hadith-section h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: var(--text-color);
+    font-family: 'Playfair Display', serif;
+}
+
+.hadith-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.hadith-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.hadith-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.hadith-votes {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-right: 1px solid var(--border-color);
+    margin-right: 1rem;
+}
+
+.vote-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    transition: all 0.2s ease;
     opacity: 0.7;
 }
 
+.vote-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.vote-btn.upvote:hover {
+    color: var(--success-color);
+}
+
+.vote-btn.downvote:hover {
+    color: var(--error-color);
+}
+
+.vote-btn.voted {
+    opacity: 1;
+    cursor: default;
+}
+
+.vote-btn.upvote.voted {
+    color: var(--success-color);
+}
+
+.vote-btn.downvote.voted {
+    color: var(--error-color);
+}
+
+.vote-btn:disabled {
+    cursor: not-allowed;
+}
+
+.vote-btn i {
+    font-size: 1.2rem;
+}
+
+.vote-btn span {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.hadith-main {
+    flex: 1;
+}
+
+.hadith-text {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    padding-left: 1rem;
+    border-left: 3px solid var(--primary-color);
+}
+
+.hadith-reference {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.hadith-narrator {
+    color: var(--text-color);
+    font-style: italic;
+}
+
+.hadith-grade {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.hadith-grade.sahih {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.hadith-grade.hasan {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.hadith-grade.daif {
+    background-color: var(--error-color);
+    color: white;
+}
+
+.hadith-details {
+    border-top: 1px solid var(--border-color);
+    margin-top: 1rem;
+    padding-top: 1rem;
+    display: none;
+}
+
+.hadith-details.expanded {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+.detail-section {
+    margin-bottom: 1.5rem;
+}
+
+.detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.detail-section h4 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.detail-section p {
+    color: var(--text-color);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.detail-section ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin: 0.5rem 0;
+}
+
+.detail-section li {
+    color: var(--text-color);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 0.25rem;
+}
+
+.arabic-text {
+    font-family: 'Noto Naskh Arabic', serif;
+    font-size: 1.4rem;
+    line-height: 2;
+    text-align: right;
+    direction: rtl;
+    margin: 1rem 0;
+}
+
+.expand-button {
+    background: transparent;
+    color: var(--primary-color);
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    margin-left: auto;
+    transition: all 0.2s ease;
+}
+
+.expand-button:hover {
+    color: var(--secondary-color);
+}
+
+.expand-icon {
+    transition: transform 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading and Error States */
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-color);
+}
+
+.error-message {
+    text-align: center;
+    padding: 2rem;
+    color: var(--error-color);
+}
+
+/* Responsive Styles */
 @media (max-width: 768px) {
-    .hijri-date.estimated::after {
-        font-size: 0.6em;
+    .hadith-section {
+        padding: 1rem;
+    }
+    
+    .hadith-card {
+        flex-direction: column;
+    }
+    
+    .hadith-votes {
+        flex-direction: row;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        margin-right: 0;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    .hadith-text {
+        font-size: 1rem;
+        padding-left: 0.75rem;
+    }
+    
+    .hadith-reference {
+        font-size: 0.85rem;
+    }
+    
+    .detail-section h4 {
+        font-size: 0.9rem;
+    }
+    
+    .detail-section p {
+        font-size: 0.85rem;
+    }
+    
+    .arabic-text {
+        font-size: 1.2rem;
     }
 }

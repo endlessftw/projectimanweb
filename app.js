@@ -103,113 +103,82 @@ async function updateCalendar() {
     try {
         const year = currentDisplayMonth.getFullYear();
         const month = currentDisplayMonth.getMonth() + 1;
-        const day = 1;
         
-        // Format date properly for API
-        const formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-        
-        // Update month display with both Gregorian and Hijri
-        try {
-            const response = await fetch(`https://api.aladhan.com/v1/gToH/${formattedDate}`);
-            if (!response.ok) throw new Error('Failed to fetch Hijri date');
-            
-            const data = await response.json();
-            if (data && data.data && data.data.hijri) {
-                elements.currentMonth.textContent = `${currentDisplayMonth.toLocaleString('default', { month: 'long' })} ${year} / ${data.data.hijri.month.en} ${data.data.hijri.year}`;
-            } else {
-                // Fallback to only Gregorian if Hijri date is not available
-                elements.currentMonth.textContent = `${currentDisplayMonth.toLocaleString('default', { month: 'long' })} ${year}`;
+        // Get calendar data for the entire month using Umm al-Qura calendar
+        const response = await fetch(
+            `https://api.aladhan.com/v1/gToHCalendar/${month}/${year}?adjustment=1`,
+            {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
             }
-        } catch (error) {
-            console.error('Error fetching Hijri date:', error);
-            // Fallback to only Gregorian
-            elements.currentMonth.textContent = `${currentDisplayMonth.toLocaleString('default', { month: 'long' })} ${year}`;
+        );
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch calendar data');
         }
+
+        const data = await response.json();
         
-        // Calculate calendar days
+        if (!data || !data.data || !data.data.length === 0) {
+            throw new Error('Invalid calendar data received');
+        }
+
+        // Update month display
+        const hijriMonth = data.data[0].hijri.month;
+        const hijriYear = data.data[0].hijri.year;
+        elements.currentMonth.textContent = `${currentDisplayMonth.toLocaleString('default', { month: 'long' })} ${year} / ${hijriMonth.en} ${hijriYear}`;
+
+        // Calculate calendar grid
         const firstDay = new Date(year, month - 1, 1);
         const lastDay = new Date(year, month, 0);
         const daysInMonth = lastDay.getDate();
         const startingDay = firstDay.getDay();
-        
+
         let calendarHTML = '';
-        
+
         // Previous month days
         const prevMonthDays = startingDay;
         const prevMonth = new Date(year, month - 2, 0);
         for (let i = prevMonthDays - 1; i >= 0; i--) {
-            const date = new Date(year, month - 2, day);
-            calendarHTML += await createDayElement(date, true);
+            const prevDate = new Date(year, month - 2, prevMonth.getDate() - i);
+            calendarHTML += createDayElement(prevDate, true);
         }
-        
+
         // Current month days
-        for (let i = 1; i <= daysInMonth; i++) {
-            const date = new Date(year, month - 1, i);
+        for (let i = 0; i < daysInMonth; i++) {
+            const date = new Date(year, month - 1, i + 1);
             const isToday = date.toDateString() === new Date().toDateString();
-            calendarHTML += await createDayElement(date, false, null, isToday);
+            const hijriData = data.data[i].hijri;
+            calendarHTML += createDayElement(date, false, hijriData, isToday);
         }
-        
+
         // Next month days
         const remainingDays = 42 - (prevMonthDays + daysInMonth);
         for (let i = 1; i <= remainingDays; i++) {
-            const date = new Date(year, month, i);
-            calendarHTML += await createDayElement(date, true);
+            const nextDate = new Date(year, month, i);
+            calendarHTML += createDayElement(nextDate, true);
         }
-        
+
         elements.calendarDays.innerHTML = calendarHTML;
     } catch (error) {
         console.error('Error updating calendar:', error);
-        // Fallback to basic calendar display
         displayFallbackCalendar();
     }
 }
 
-async function createDayElement(date, isDifferentMonth, hijriDate, isToday = false) {
+function createDayElement(date, isDifferentMonth, hijriData = null, isToday = false) {
     const isFriday = date.getDay() === 5;
     const isRamadan = date >= RAMADAN_START_2024 && date <= new Date(2024, 2, 28);
     
     let hijriDateText = '';
-    if (!isDifferentMonth) {
-        try {
-            // Only attempt API call for dates within 3 months
-            const now = new Date();
-            const threeMonthsFromNow = new Date(now.getFullYear(), now.getMonth() + 3, now.getDate());
-            
-            if (date <= threeMonthsFromNow) {
-                const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-                const response = await fetch(`https://api.aladhan.com/v1/gToH/${formattedDate}`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && data.data && data.data.hijri) {
-                        hijriDate = data.data.hijri;
-                        hijriDateText = `<span class="hijri-date">${hijriDate.day} ${hijriDate.month.en}</span>`;
-                    } else {
-                        // Use estimated calculation if API response is invalid
-                        const estimatedHijri = estimateHijriDate(date);
-                        hijriDateText = `<span class="hijri-date estimated">${estimatedHijri.day} ${estimatedHijri.month}</span>`;
-                    }
-                } else {
-                    // Use estimated calculation for failed API calls
-                    const estimatedHijri = estimateHijriDate(date);
-                    hijriDateText = `<span class="hijri-date estimated">${estimatedHijri.day} ${estimatedHijri.month}</span>`;
-                }
-            } else {
-                // Use estimated calculation for future dates
-                const estimatedHijri = estimateHijriDate(date);
-                hijriDateText = `<span class="hijri-date estimated">${estimatedHijri.day} ${estimatedHijri.month}</span>`;
-            }
-        } catch (error) {
-            console.warn('Error fetching Hijri date:', error);
-            // Use estimated calculation as fallback
-            const estimatedHijri = estimateHijriDate(date);
-            hijriDateText = `<span class="hijri-date estimated">${estimatedHijri.day} ${estimatedHijri.month}</span>`;
-        }
+    if (hijriData) {
+        hijriDateText = `<span class="hijri-date">${hijriData.day} ${hijriData.month.en}</span>`;
+    } else if (!isDifferentMonth) {
+        // Use estimated calculation for dates without Hijri data
+        const estimatedHijri = estimateHijriDate(date);
+        hijriDateText = `<span class="hijri-date estimated">${estimatedHijri.day} ${estimatedHijri.month}</span>`;
     }
     
     const classes = [
@@ -221,8 +190,8 @@ async function createDayElement(date, isDifferentMonth, hijriDate, isToday = fal
     ].filter(Boolean).join(' ');
 
     let islamicEventHTML = '';
-    if (hijriDate) {
-        const dayEvents = getIslamicEvents(hijriDate);
+    if (hijriData) {
+        const dayEvents = getIslamicEvents(hijriData);
         if (dayEvents && dayEvents.length > 0) {
             islamicEventHTML = dayEvents.map(event => 
                 `<div class="islamic-event ${event.type}">${event.description}</div>`
@@ -450,7 +419,7 @@ async function init() {
         // Register service worker last
         if (window.location.protocol === 'https:' || window.location.hostname === 'localhost') {
             try {
-                await registerServiceWorker();
+        await registerServiceWorker();
             } catch (error) {
                 console.warn('Could not register service worker:', error);
             }
@@ -1075,45 +1044,37 @@ async function updateDates() {
     // Fetch Hijri date with better error handling and fallback
     const fetchHijriDate = async () => {
         try {
-            // Format date as YYYY-MM-DD
-            const dateStr = now.toISOString().split('T')[0];
+            // Format date for API request (YYYY-MM-DD)
+            const formattedDate = now.toISOString().split('T')[0];
             
-            // First try the aladhan API with coordinates if available
-            let response;
-            if (userLocation) {
-                response = await fetch(
-                    `https://api.aladhan.com/v1/timings/${Math.floor(Date.now() / 1000)}?latitude=${userLocation.latitude}&longitude=${userLocation.longitude}`
-                );
-            } else {
-                response = await fetch(
-                    `https://api.aladhan.com/v1/gToH/${dateStr}`
-                );
-            }
+            // Use the Umm al-Qura calendar API
+            const response = await fetch(
+                `https://api.aladhan.com/v1/gToH/${formattedDate}?adjustment=1`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                }
+            );
 
             if (!response.ok) {
                 throw new Error(`Failed to fetch from API: ${response.status}`);
             }
             
             const data = await response.json();
-            let hijri;
             
-            if (data.data.date && data.data.date.hijri) {
-                hijri = data.data.date.hijri;
-            } else if (data.data.hijri) {
-                hijri = data.data.hijri;
+            if (data.code === 200 && data.data && data.data.hijri) {
+                const hijri = data.data.hijri;
+                elements.hijriDate.textContent = `${hijri.day} ${hijri.month.en} ${hijri.year} AH`;
             } else {
                 throw new Error('Invalid data format');
             }
-            
-            elements.hijriDate.textContent = `${hijri.day} ${hijri.month.en} ${hijri.year} AH`;
         } catch (error) {
             console.error('Error with Hijri date API:', error);
-            elements.hijriDate.innerHTML = `
-                <span style="color: var(--text-secondary);">Unable to load Hijri date</span>
-                <button onclick="updateDates()" class="retry-button" style="margin-left: 10px; padding: 2px 8px; font-size: 0.8rem;">
-                    Retry
-                </button>
-            `;
+            // Use estimated calculation as fallback
+            const estimatedHijri = estimateHijriDate(now);
+            elements.hijriDate.textContent = `${estimatedHijri.day} ${estimatedHijri.month} ${estimatedHijri.year} AH (est.)`;
         }
     };
 
@@ -1448,6 +1409,15 @@ async function loadQuranData() {
             </option>
         `).join('');
 
+        // Add font size control listeners
+        document.getElementById('increaseFont').addEventListener('click', () => {
+            changeFontSize(2);
+        });
+
+        document.getElementById('decreaseFont').addEventListener('click', () => {
+            changeFontSize(-2);
+        });
+
         // Load first surah by default
         await loadSurah(1);
 
@@ -1457,89 +1427,95 @@ async function loadQuranData() {
         });
     } catch (error) {
         console.error('Error loading Quran data:', error);
-        if (elements.surahSelect) {
-            elements.surahSelect.innerHTML = '<option value="">Failed to load Surahs</option>';
-        }
-        if (elements.quranText) {
             elements.quranText.innerHTML = `
                 <div class="error-message">
                     Unable to load Quran data. Please check your internet connection.
                     <button onclick="loadQuranData()" class="retry-button">Retry</button>
                 </div>
             `;
-        }
     }
 }
 
 async function loadSurah(surahNumber) {
     try {
         elements.quranText.innerHTML = '<div class="loading">Loading Surah...</div>';
-        elements.audioPlayer.innerHTML = '<div class="loading">Loading Audio...</div>';
 
-        // Load Surah text
-        const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`);
-        const data = await response.json();
+        // Load Surah text and translation simultaneously
+        const [surahResponse, translationResponse] = await Promise.all([
+            fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}`),
+            fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/en.sahih`)
+        ]);
+
+        const [surahData, translationData] = await Promise.all([
+            surahResponse.json(),
+            translationResponse.json()
+        ]);
         
-        if (!data || !data.data || !data.data.ayahs) {
+        if (!surahData.data || !translationData.data) {
             throw new Error('Invalid Surah data received');
         }
         
-        elements.quranText.innerHTML = data.data.ayahs.map(ayah => `
-            <div class="ayah">
-                <span class="arabic">${ayah.text}</span>
-                <small class="ayah-number">${ayah.numberInSurah}</small>
-            </div>
-        `).join('');
+        // Update Surah title and info
+        const surah = surahData.data;
+        document.getElementById('surahTitle').textContent = surah.name;
+        document.getElementById('surahInfo').textContent = 
+            `${surah.englishName} - ${surah.englishNameTranslation} | Verses: ${surah.numberOfAyahs} | Revealed in ${surah.revelationType}`;
 
-        // Load audio with better error handling
-        try {
-            // Construct the audio URL directly using a reliable CDN
-            const paddedNumber = surahNumber.toString().padStart(3, '0');
-            const audioUrl = `https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/${paddedNumber}.mp3`;
+        // Don't show Bismillah for Surah At-Tawbah (9)
+        const bismillah = document.querySelector('.bismillah');
+        if (bismillah) {
+            bismillah.style.display = surahNumber === 9 ? 'none' : 'block';
+        }
+
+        // Combine Arabic and translation with individual audio players
+        elements.quranText.innerHTML = surah.ayahs.map((ayah, index) => {
+            const paddedSurah = surahNumber.toString().padStart(3, '0');
+            const paddedAyah = ayah.numberInSurah.toString().padStart(3, '0');
+            const audioUrl = `https://everyayah.com/data/Alafasy_128kbps/${paddedSurah}${paddedAyah}.mp3`;
             
-            // Test if the audio URL is accessible
-            const audioTest = await fetch(audioUrl, { method: 'HEAD' });
-            if (!audioTest.ok) {
-                throw new Error('Audio file not accessible');
-            }
-            
-            elements.audioPlayer.innerHTML = `
-                <audio controls controlsList="nodownload">
+            return `
+                <div class="ayah" id="ayah-${ayah.number}">
+                    <div class="ayah-header">
+                        <span class="ayah-number">${ayah.numberInSurah}</span>
+                        <div class="ayah-audio">
+                            <audio controls>
                     <source src="${audioUrl}" type="audio/mpeg">
                     Your browser does not support the audio element.
                 </audio>
-                <div class="audio-fallback">
-                    <a href="${audioUrl}" target="_blank" rel="noopener noreferrer">
-                        Download Audio
-                    </a>
+                </div>
+                        </div>
+                    <div class="arabic">
+                        ${ayah.text}
+                    </div>
+                    <div class="translation">
+                        ${translationData.data.ayahs[index].text}
+                    </div>
                 </div>
             `;
+        }).join('');
 
-            // Add error handling for the audio element
-            const audioElement = elements.audioPlayer.querySelector('audio');
-            audioElement.onerror = () => {
-                elements.audioPlayer.innerHTML = `
-                    <div class="error-message">
-                        Error playing audio. Please try the download link below.
-                        <div class="audio-fallback">
-                            <a href="${audioUrl}" target="_blank" rel="noopener noreferrer">
-                                Download Audio
-                            </a>
-                        </div>
-                    </div>
+        // Add event listeners for audio elements
+        document.querySelectorAll('.ayah-audio audio').forEach(audio => {
+            // Error handling
+            audio.onerror = function() {
+                const audioContainer = this.parentElement;
+                audioContainer.innerHTML = `
+                    <span class="audio-error">
+                        <i class="fas fa-exclamation-circle"></i> Audio unavailable
+                    </span>
                 `;
             };
-        } catch (audioError) {
-            console.error('Error loading Surah audio:', audioError);
-            elements.audioPlayer.innerHTML = `
-                <div class="error-message">
-                    Unable to load audio. Please try again.
-                    <button onclick="loadSurah(${surahNumber})" class="retry-button">
-                        Retry Audio
-                    </button>
-                </div>
-            `;
-        }
+
+            // Pause other audio when one starts playing
+            audio.addEventListener('play', function() {
+                document.querySelectorAll('.ayah-audio audio').forEach(otherAudio => {
+                    if (otherAudio !== this && !otherAudio.paused) {
+                        otherAudio.pause();
+                    }
+                });
+            });
+        });
+
     } catch (error) {
         console.error('Error loading surah:', error);
         elements.quranText.innerHTML = `
@@ -1553,19 +1529,297 @@ async function loadSurah(surahNumber) {
     }
 }
 
-// Hadith Functions
+// Add font size control function
+function changeFontSize(change) {
+    const quranText = document.getElementById('quranText');
+    const currentSize = parseInt(window.getComputedStyle(quranText).fontSize);
+    const newSize = Math.min(Math.max(currentSize + change, 16), 32); // Min 16px, Max 32px
+    
+    quranText.style.fontSize = `${newSize}px`;
+    
+    // Also adjust Arabic text size
+    const arabicTexts = quranText.querySelectorAll('.arabic');
+    arabicTexts.forEach(text => {
+        text.style.fontSize = `${newSize * 1.3}px`; // Arabic text 30% larger than translation
+    });
+}
+
+// Hadith Collection
+const hadiths = [
+    {
+        id: 1,
+        text: "The deeds are considered by the intentions, and a person will get the reward according to his intention.",
+        reference: "Sahih al-Bukhari 1",
+        narrator: "Umar ibn Al-Khattab",
+        book: "Sahih al-Bukhari",
+        chapter: "Book of Revelation",
+        grade: "Sahih",
+        explanation: "This is one of the most important hadiths in Islam. It emphasizes that the value of actions depends on the intentions behind them. This hadith was often cited by scholars as one of the core principles of Islamic jurisprudence.",
+        context: "This hadith was narrated during a sermon by Umar ibn Al-Khattab, who heard it directly from the Prophet Muhammad (peace be upon him). It addresses the importance of sincerity in all actions.",
+        benefits: [
+            "Teaches the importance of intention in Islam",
+            "Shows that actions are judged by their underlying motives",
+            "Emphasizes the need for sincerity in worship",
+            "Demonstrates that the same action can have different rewards based on intention"
+        ],
+        relatedHadiths: ["Sahih al-Bukhari 54", "Sahih Muslim 1907"],
+        arabicText: "إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى",
+        votes: { upvotes: 0, downvotes: 0 }
+    },
+    {
+        id: 2,
+        text: "The best among you is the one who learns the Quran and teaches it.",
+        reference: "Sahih al-Bukhari 5027",
+        narrator: "Uthman ibn Affan",
+        book: "Sahih al-Bukhari",
+        chapter: "Book of Virtues of the Quran",
+        grade: "Sahih",
+        explanation: "This hadith highlights the special status of those who engage with the Quran, both as learners and teachers. It shows that the best of people are those who not only seek knowledge but also share it with others.",
+        context: "This was said during a gathering where the companions were discussing the virtues of different good deeds. The Prophet (peace be upon him) emphasized the importance of Quranic education.",
+        benefits: [
+            "Encourages Quranic education",
+            "Shows the virtue of teaching others",
+            "Emphasizes the importance of both learning and teaching",
+            "Highlights the ongoing nature of Quranic study"
+        ],
+        relatedHadiths: ["Sahih al-Bukhari 5028", "Sunan Ibn Majah 211"],
+        arabicText: "خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ",
+        votes: { upvotes: 0, downvotes: 0 }
+    }
+    // ... other hadiths with similar detailed structure ...
+];
+
+// Add this function to load votes from Supabase
+async function loadHadithVotes() {
+    try {
+        // Reset all votes to 0 first
+        hadiths.forEach(hadith => {
+            hadith.votes = { upvotes: 0, downvotes: 0 };
+        });
+
+        // Try to load votes from database
+        const { data, error } = await supabase
+            .from('hadith_votes')
+            .select('hadith_id, vote_type, count');
+
+        if (error) {
+            // If table doesn't exist, initialize it
+            if (error.code === '42P01') { // PostgreSQL code for undefined_table
+                console.log('Initializing hadith votes table...');
+                await initializeHadithVotes();
+            } else {
+                throw error;
+            }
+        } else if (data) {
+            // Update votes from database
+            data.forEach(vote => {
+                const hadith = hadiths.find(h => h.id === vote.hadith_id);
+                if (hadith) {
+                    if (vote.vote_type === 'upvote') {
+                        hadith.votes.upvotes = vote.count;
+                    } else {
+                        hadith.votes.downvotes = vote.count;
+                    }
+                }
+            });
+        }
+
+        // Update the display
+        updateHadithVotesDisplay();
+    } catch (error) {
+        console.error('Error loading hadith votes:', error);
+        // Continue with default zero votes
+        updateHadithVotesDisplay();
+    }
+}
+
+// Add this new function to initialize votes
+async function initializeHadithVotes() {
+    try {
+        // Initialize votes for each hadith
+        const voteData = hadiths.flatMap(hadith => [
+            {
+                hadith_id: hadith.id,
+                vote_type: 'upvote',
+                count: 0
+            },
+            {
+                hadith_id: hadith.id,
+                vote_type: 'downvote',
+                count: 0
+            }
+        ]);
+
+        const { error } = await supabase
+            .from('hadith_votes')
+            .upsert(voteData);
+
+        if (error) throw error;
+    } catch (error) {
+        console.error('Error initializing hadith votes:', error);
+        throw error;
+    }
+}
+
+// Add this function to update vote displays
+function updateHadithVotesDisplay() {
+    hadiths.forEach(hadith => {
+        const hadithCard = document.querySelector(`.hadith-card[data-id="${hadith.id}"]`);
+        if (hadithCard) {
+            const upvoteSpan = hadithCard.querySelector('.upvote span');
+            const downvoteSpan = hadithCard.querySelector('.downvote span');
+            
+            upvoteSpan.textContent = hadith.votes.upvotes;
+            downvoteSpan.textContent = hadith.votes.downvotes;
+        }
+    });
+}
+
+// Update the handleHadithVote function
+async function handleHadithVote(hadithId, isUpvote) {
+    try {
+        const user = supabase.auth.user();
+        if (!user) {
+            alert('Please sign in to vote');
+            return;
+        }
+
+        const voteType = isUpvote ? 'upvote' : 'downvote';
+        
+        // Check if user has already voted
+        const { data: existingVote, error: checkError } = await supabase
+            .from('user_hadith_votes')
+            .select('*')
+            .eq('hadith_id', hadithId)
+            .eq('user_id', user.id)
+            .single();
+
+        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows found
+            throw checkError;
+        }
+
+        if (existingVote) {
+            alert('You have already voted on this hadith');
+            return;
+        }
+
+        // Record the user's vote
+        const { error: voteError } = await supabase
+            .from('user_hadith_votes')
+            .insert([{
+                hadith_id: hadithId,
+                user_id: user.id,
+                vote_type: voteType
+            }]);
+
+        if (voteError) throw voteError;
+
+        // Update the vote count
+        const { error: updateError } = await supabase
+            .from('hadith_votes')
+            .upsert([{
+                hadith_id: hadithId,
+                vote_type: voteType,
+                count: supabase.raw('COALESCE(count, 0) + 1')
+            }]);
+
+        if (updateError) throw updateError;
+
+        // Reload votes to update display
+        await loadHadithVotes();
+
+        // Disable the voted button
+        const hadithCard = document.querySelector(`.hadith-card[data-id="${hadithId}"]`);
+        const votedButton = hadithCard.querySelector(isUpvote ? '.upvote' : '.downvote');
+        votedButton.disabled = true;
+        votedButton.classList.add('voted');
+
+    } catch (error) {
+        console.error('Error handling vote:', error);
+        alert('Error recording vote. Please try again.');
+    }
+}
+
+// Update the loadHadith function to include vote loading
 async function loadHadith() {
     try {
-        // Using a simple hadith API (you might want to replace this with a more comprehensive one)
-        const response = await fetch('https://random-hadith-generator.vercel.app/bukhari');
-        const data = await response.json();
+        elements.hadithContent.innerHTML = '<div class="loading">Loading hadiths...</div>';
+        
+        // Load votes first
+        await loadHadithVotes();
         
         elements.hadithContent.innerHTML = `
-            <div class="hadith-text">${data.hadith}</div>
-            <div class="hadith-reference">Sahih Bukhari</div>
+            <div class="hadith-list">
+                ${hadiths.map(hadith => `
+                    <div class="hadith-card" data-id="${hadith.id}">
+                        <div class="hadith-votes">
+                            <button class="vote-btn upvote" onclick="handleHadithVote(${hadith.id}, true)">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>${hadith.votes.upvotes}</span>
+                            </button>
+                            <button class="vote-btn downvote" onclick="handleHadithVote(${hadith.id}, false)">
+                                <i class="fas fa-arrow-down"></i>
+                                <span>${hadith.votes.downvotes}</span>
+                            </button>
+                        </div>
+                        <div class="hadith-main">
+                            <div class="hadith-text">
+                                "${hadith.text}"
+                            </div>
+                            <div class="hadith-reference">
+                                <i class="fas fa-book"></i> ${hadith.reference}
+                                <span class="hadith-narrator">Narrated by: ${hadith.narrator}</span>
+                                <span class="hadith-grade ${hadith.grade.toLowerCase()}">${hadith.grade}</span>
+                            </div>
+                            <button class="expand-button" onclick="toggleHadithDetails(${hadith.id})">
+                                <span class="expand-text">Show Details</span>
+                                <i class="fas fa-chevron-down expand-icon"></i>
+                            </button>
+                            <div class="hadith-details" id="details-${hadith.id}">
+                                <div class="detail-section">
+                                    <h4>Arabic Text</h4>
+                                    <p class="arabic-text">${hadith.arabicText}</p>
+                                </div>
+                                <div class="detail-section">
+                                    <h4>Context</h4>
+                                    <p>${hadith.context}</p>
+                                </div>
+                                <div class="detail-section">
+                                    <h4>Explanation</h4>
+                                    <p>${hadith.explanation}</p>
+                                </div>
+                                <div class="detail-section">
+                                    <h4>Benefits</h4>
+                                    <ul>
+                                        ${hadith.benefits.map(benefit => `<li>${benefit}</li>`).join('')}
+                                    </ul>
+                                </div>
+                                <div class="detail-section">
+                                    <h4>Source Information</h4>
+                                    <p>Book: ${hadith.book}</p>
+                                    <p>Chapter: ${hadith.chapter}</p>
+                                </div>
+                                <div class="detail-section">
+                                    <h4>Related Hadiths</h4>
+                                    <p>${hadith.relatedHadiths.join(', ')}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
         `;
     } catch (error) {
         console.error('Error loading hadith:', error);
+        elements.hadithContent.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                Unable to load hadiths. Please try again.
+                <button onclick="loadHadith()" class="retry-button">
+                    <i class="fas fa-sync-alt"></i> Try Again
+                </button>
+            </div>
+        `;
     }
 }
 
@@ -1779,25 +2033,28 @@ async function convertGregorianToHijri() {
         elements.hijriResult.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting...';
         
         const gregorianDate = elements.gregorianDateInput.value;
-        const response = await fetch(`https://api.islamicfinder.org/v1/calendar?date=${gregorianDate}`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
+        const response = await fetch(
+            `https://api.aladhan.com/v1/gToH/${gregorianDate}?adjustment=1`,
+            {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
             }
-        });
+        );
         
         if (!response.ok) {
             throw new Error('Failed to convert date');
         }
         
         const data = await response.json();
-        if (!data || !data.hijri) {
+        if (!data || !data.data || !data.data.hijri) {
             throw new Error('Invalid response format');
         }
         
+        const hijri = data.data.hijri;
         elements.hijriResult.textContent = 
-            `${data.hijri.day} ${data.hijri.month} ${data.hijri.year} AH`;
+            `${hijri.day} ${hijri.month.en} ${hijri.year} AH`;
             
     } catch (error) {
         console.error('Error converting date:', error);
@@ -1815,11 +2072,11 @@ async function convertHijriToGregorian() {
         const year = elements.hijriYear.value;
         
         const response = await fetch(
-            `https://api.islamicfinder.org/v1/calendar/hijri/${year}/${month}/${day}`, {
+            `https://api.aladhan.com/v1/hToG/${day}/${month}/${year}`,
+            {
                 method: 'GET',
                 headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
+                    'Accept': 'application/json'
                 }
             }
         );
@@ -1829,12 +2086,13 @@ async function convertHijriToGregorian() {
         }
         
         const data = await response.json();
-        if (!data || !data.gregorian) {
+        if (!data || !data.data || !data.data.gregorian) {
             throw new Error('Invalid response format');
         }
         
+        const gregorian = data.data.gregorian;
         elements.gregorianResult.textContent = 
-            new Date(data.gregorian.date).toLocaleDateString('en-US', {
+            new Date(gregorian.date).toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -1845,6 +2103,62 @@ async function convertHijriToGregorian() {
         console.error('Error converting date:', error);
         elements.gregorianResult.innerHTML = 
             '<span class="error"><i class="fas fa-exclamation-circle"></i> Error converting date</span>';
+    }
+}
+
+// Add this helper function to get Islamic events
+function getIslamicEvents(hijriDate) {
+    const events = [];
+    
+    // Check for month-long events
+    if (islamicEvents[hijriDate.month.en]) {
+        events.push({
+            type: islamicEvents[hijriDate.month.en].type,
+            description: islamicEvents[hijriDate.month.en].description
+        });
+    }
+    
+    // Check for special days
+    const specialDays = {
+        'Ramadan-27': 'Laylat al-Qadr',
+        'Shawwal-1': 'Eid al-Fitr',
+        'Dhul Hijjah-10': 'Eid al-Adha',
+        'Muharram-1': 'Islamic New Year',
+        'Muharram-10': 'Ashura',
+        'Rabi al-Awwal-12': 'Mawlid al-Nabi',
+        'Rajab-27': 'Isra and Miraj',
+        'Ramadan-1': 'First of Ramadan',
+        "Sha'ban-15": 'Laylat al-Baraat',
+        'Rajab-27': 'Laylat al-Miraj',
+        'Rajab-1': 'Laylat al-Raghaib'
+    };
+    
+    const dayKey = `${hijriDate.month.en}-${hijriDate.day}`;
+    if (specialDays[dayKey] && islamicEvents[specialDays[dayKey]]) {
+        events.push({
+            type: islamicEvents[specialDays[dayKey]].type,
+            description: islamicEvents[specialDays[dayKey]].description
+        });
+    }
+    
+    return events;
+}
+
+// Add this new function
+function toggleHadithDetails(hadithId) {
+    const detailsSection = document.getElementById(`details-${hadithId}`);
+    const button = detailsSection.previousElementSibling;
+    const expandIcon = button.querySelector('.expand-icon');
+    const expandText = button.querySelector('.expand-text');
+    
+    if (detailsSection.classList.contains('expanded')) {
+        detailsSection.classList.remove('expanded');
+        expandIcon.style.transform = 'rotate(0deg)';
+        expandText.textContent = 'Show Details';
+    } else {
+        detailsSection.classList.add('expanded');
+        expandIcon.style.transform = 'rotate(180deg)';
+        expandText.textContent = 'Hide Details';
     }
 }
 

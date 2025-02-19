@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Project Iman - Prayer Times, Qibla, Quran & More</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
@@ -123,17 +126,35 @@
 
             <!-- Quran Page -->
             <div class="page" id="quran-page">
-                <section class="card quran-section">
-                    <h2><i class="fas fa-book-open"></i> Quran</h2>
+                <section class="quran-section">
+                    <div class="quran-header">
+                        <h2><i class="fas fa-book-open"></i> The Noble Quran</h2>
+                        <div class="surah-selector">
+                            <select id="surahSelect" class="surah-dropdown">
+                                <!-- Surahs will be dynamically added here -->
+                            </select>
+                        </div>
+                    </div>
                     <div class="quran-container">
-                        <select id="surahSelect">
-                            <!-- Surahs will be dynamically added here -->
-                        </select>
+                        <div class="quran-controls">
+                            <div class="font-controls">
+                                <button class="control-btn" id="decreaseFont"><i class="fas fa-minus"></i></button>
+                                <span>Font Size</span>
+                                <button class="control-btn" id="increaseFont"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <div id="audioPlayer" class="audio-player">
+                                <!-- Audio controls will be added here -->
+                            </div>
+                        </div>
+                        <div class="bismillah">
+                            ﷽
+                        </div>
+                        <div class="surah-title">
+                            <h3 id="surahTitle" class="arabic-title"></h3>
+                            <p id="surahInfo" class="surah-info"></p>
+                        </div>
                         <div id="quranText" class="quran-text">
                             <!-- Quran text will be displayed here -->
-                        </div>
-                        <div id="audioPlayer" class="audio-controls">
-                            <!-- Audio controls will be added here -->
                         </div>
                     </div>
                 </section>
