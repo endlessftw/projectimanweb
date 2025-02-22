@@ -1,11 +1,11 @@
 :root {
-    --primary-color: #00b4d8;
-    --secondary-color: #48cae4;
+    --primary-color: #ffd700;
+    --secondary-color: #ffeb3b;
     --accent-color: #ffd700;
     --background-color: #121212;
     --card-background: #1e1e1e;
     --text-color: #ffffff;
-    --text-secondary: #90caf9;
+    --text-secondary: #ffd700;
     --border-color: #2a2a2a;
     --success-color: #4caf50;
     --error-color: #f44336;
@@ -15,8 +15,8 @@
 }
 
 [data-theme="dark"] {
-    --primary-color: #64b5f6;
-    --secondary-color: #b2ebf2;
+    --primary-color: #ffd700;
+    --secondary-color: #ffeb3b;
     --background-color: #121212;
     --text-color: #ffffff;
     --card-background: #1e1e1e;
@@ -1858,6 +1858,94 @@ body {
     color: var(--emerald);
 }
 
+.ramadan-info-btn {
+    cursor: pointer;
+    background: var(--accent-color);
+    color: var(--background-color);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    margin-top: 0.2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.ramadan-info-btn:hover {
+    transform: scale(1.05);
+    background: var(--primary-color);
+}
+
+.ramadan-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--card-background);
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    max-width: 500px;
+    width: 90%;
+    border: 2px solid var(--accent-color);
+    display: none;
+}
+
+.ramadan-popup.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+.ramadan-popup h3 {
+    color: var(--accent-color);
+    margin-bottom: 1rem;
+    font-family: 'Playfair Display', serif;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ramadan-popup p {
+    color: var(--text-color);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.ramadan-popup .close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.ramadan-popup .close-btn:hover {
+    color: var(--accent-color);
+    transform: rotate(90deg);
+}
+
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    z-index: 999;
+    display: none;
+}
+
+.popup-overlay.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
 @media (max-width: 768px) {
     .dual-calendar {
         padding: 1rem;
@@ -1967,6 +2055,7 @@ body {
     padding: 0.5rem;
     transition: all 0.2s ease;
     opacity: 0.7;
+    position: relative;
 }
 
 .vote-btn:hover {
@@ -1984,7 +2073,7 @@ body {
 
 .vote-btn.voted {
     opacity: 1;
-    cursor: default;
+    animation: pop 0.3s ease-out;
 }
 
 .vote-btn.upvote.voted {
@@ -1997,15 +2086,33 @@ body {
 
 .vote-btn:disabled {
     cursor: not-allowed;
+    opacity: 0.5;
 }
 
 .vote-btn i {
     font-size: 1.2rem;
+    transition: transform 0.2s ease;
 }
 
 .vote-btn span {
     font-size: 0.9rem;
     font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.vote-btn.voted i {
+    animation: bounce 0.5s ease;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+@keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
 }
 
 .hadith-main {
@@ -2198,5 +2305,957 @@ body {
     
     .arabic-text {
         font-size: 1.2rem;
+    }
+}
+
+/* Auth Styles */
+.auth-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: auto;
+}
+
+.auth-button {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--primary-color);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.auth-button:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.auth-button i {
+    font-size: 1.1rem;
+}
+
+.user-email {
+    color: var(--text-color);
+    margin-right: 1rem;
+    font-family: 'Raleway', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.user-email i {
+    color: var(--accent-color);
+}
+
+#authModal.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background-color: var(--card-background);
+    padding: 2.5rem;
+    border-radius: 15px;
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    animation: slideUp 0.3s ease;
+}
+
+.modal-content h2 {
+    color: var(--accent-color);
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    border: none;
+    background: none;
+    color: var(--text-color);
+    font-size: 1.5rem;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background-color: var(--border-color);
+    color: var(--accent-color);
+    transform: rotate(90deg);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+    border-color: var(--accent-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+}
+
+.form-group i {
+    position: absolute;
+    right: 1rem;
+    top: 2.5rem;
+    color: var(--text-secondary);
+}
+
+.auth-submit {
+    width: 100%;
+    padding: 1rem;
+    background-color: var(--accent-color);
+    color: var(--background-color);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    margin-top: 1.5rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.auth-submit:hover {
+    background-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.auth-switch {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: var(--text-secondary);
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.auth-switch a {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.auth-switch a:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .modal-content {
+        margin: 1rem;
+        padding: 2rem;
+    }
+
+    .modal-content h2 {
+        font-size: 1.8rem;
+    }
+
+    .auth-button {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Notification Styles */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    background-color: var(--card-background);
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 2000;
+    animation: slideInRight 0.3s ease;
+}
+
+.notification.success {
+    border-left: 4px solid var(--success-color);
+}
+
+.notification.error {
+    border-left: 4px solid var(--error-color);
+}
+
+.notification i {
+    font-size: 1.2rem;
+}
+
+.notification.success i {
+    color: var(--success-color);
+}
+
+.notification.error i {
+    color: var(--error-color);
+}
+
+.notification.fade-out {
+    animation: slideOutRight 0.3s ease forwards;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Forgot Password Link */
+.forgot-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--accent-color);
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background-color: var(--background-color);
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+}
+
+.forgot-link i {
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.forgot-link:hover {
+    color: var(--primary-color);
+    background-color: var(--card-background);
+    transform: translateY(-2px);
+}
+
+.forgot-link:hover i {
+    transform: rotate(15deg);
+}
+
+/* Spinner Animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Disabled button state */
+.auth-submit:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Dua Section Styles */
+.dua-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.dua-section h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: var(--accent-color);
+    font-family: 'Playfair Display', serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.dua-card {
+    background: var(--card-background);
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.dua-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: var(--accent-color);
+}
+
+.dua-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--background-color);
+    border-radius: 20px;
+    color: var(--accent-color);
+    font-size: 0.9rem;
+    font-weight: 500;
+    width: fit-content;
+}
+
+.dua-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem;
+    background: var(--background-color);
+    border-radius: 12px;
+}
+
+.dua-arabic {
+    font-family: 'Scheherazade New', serif;
+    font-size: 2rem;
+    line-height: 2;
+    text-align: right;
+    direction: rtl;
+    color: var(--text-color);
+    padding: 1rem;
+    border-radius: 8px;
+    background: var(--card-background);
+    position: relative;
+}
+
+.dua-transliteration, .dua-translation {
+    padding: 1rem;
+    border-radius: 8px;
+    background: var(--card-background);
+    position: relative;
+}
+
+.dua-transliteration {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    line-height: 1.8;
+}
+
+.dua-translation {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: var(--text-color);
+    line-height: 1.8;
+}
+
+.label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-family: 'Raleway', sans-serif;
+}
+
+.copy-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0.5rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.dua-arabic:hover .copy-btn,
+.dua-transliteration:hover .copy-btn {
+    opacity: 1;
+}
+
+.copy-btn:hover {
+    color: var(--accent-color);
+    transform: scale(1.1);
+}
+
+.dua-reference {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    background: var(--background-color);
+    border-radius: 8px;
+    width: fit-content;
+}
+
+.dua-benefits {
+    padding: 1.5rem;
+    background: var(--background-color);
+    border-radius: 12px;
+}
+
+.dua-benefits h3 {
+    color: var(--accent-color);
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dua-benefits ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.dua-benefits li {
+    color: var(--text-color);
+    padding-left: 1.5rem;
+    position: relative;
+    line-height: 1.6;
+}
+
+.dua-benefits li::before {
+    content: '•';
+    color: var(--accent-color);
+    position: absolute;
+    left: 0;
+    font-size: 1.2rem;
+}
+
+.dua-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.share-btn {
+    background-color: var(--accent-color);
+    color: var(--background-color);
+}
+
+.refresh-btn {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+}
+
+.share-btn:hover {
+    background-color: var(--primary-color);
+}
+
+.refresh-btn:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.action-btn i {
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .dua-section {
+        padding: 1rem;
+    }
+
+    .dua-card {
+        padding: 1.5rem;
+        gap: 1rem;
+    }
+
+    .dua-arabic {
+        font-size: 1.8rem;
+    }
+
+    .dua-transliteration {
+        font-size: 1rem;
+    }
+
+    .dua-translation {
+        font-size: 1.1rem;
+    }
+
+    .dua-actions {
+        flex-direction: column;
+    }
+
+    .copy-btn {
+        opacity: 1;
+        background: var(--background-color);
+        border-radius: 50%;
+        padding: 0.8rem;
+    }
+}
+
+/* Add animation for the copy and share notifications */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    background: var(--card-background);
+    color: var(--text-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    animation: slideInRight 0.3s ease;
+    z-index: 1000;
+}
+
+.notification.success {
+    border-left: 4px solid var(--success-color);
+}
+
+.notification.error {
+    border-left: 4px solid var(--error-color);
+}
+
+.notification i {
+    font-size: 1.2rem;
+}
+
+.notification.success i {
+    color: var(--success-color);
+}
+
+.notification.error i {
+    color: var(--error-color);
+}
+
+/* Tasbih Section Styles */
+.tasbih-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: var(--background-color);
+    border-radius: 15px;
+}
+
+.tasbih-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    align-items: center;
+}
+
+.tasbih-visualization {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin: 2rem auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tasbih-string {
+    position: absolute;
+    width: 280px;
+    height: 280px;
+    border: 2px solid var(--accent-color);
+    border-radius: 50%;
+    opacity: 0.3;
+}
+
+.tasbih-beads {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform-origin: center;
+}
+
+.tasbih-bead {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: var(--text-secondary);
+    border-radius: 50%;
+    left: 50%;
+    top: 50%;
+    margin: -10px;
+    transition: all 0.3s ease;
+}
+
+.tasbih-bead.active {
+    background: var(--accent-color);
+    box-shadow: 0 0 10px var(--accent-color);
+    transform: scale(1.2);
+}
+
+.tasbih-counter {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+}
+
+.counter-ring {
+    width: 100px;
+    height: 100px;
+    background: var(--background-color);
+    border: 3px solid var(--accent-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+    animation: pulse 2s infinite;
+}
+
+#tasbihCount {
+    font-size: 2.5rem;
+    color: var(--accent-color);
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+}
+
+.dhikr-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.dhikr-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem 1.5rem;
+    background: var(--background-color);
+    border: 2px solid var(--border-color);
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dhikr-button .arabic {
+    font-family: 'Scheherazade New', serif;
+    font-size: 2rem;
+    color: var(--accent-color);
+    text-align: center;
+}
+
+.dhikr-button .translation {
+    font-size: 1.1rem;
+    color: var(--text-color);
+    font-weight: 500;
+    text-align: center;
+}
+
+.dhikr-button .meaning {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.dhikr-button:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent-color);
+    box-shadow: 0 8px 20px rgba(255, 215, 0, 0.15);
+}
+
+.dhikr-button.active {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(255, 215, 0, 0.2);
+}
+
+.dhikr-button.active .arabic,
+.dhikr-button.active .translation,
+.dhikr-button.active .meaning {
+    color: var(--background-color);
+}
+
+.tasbih-controls {
+    display: flex;
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 500px;
+    margin: 1rem auto;
+    padding: 0 1rem;
+}
+
+.tasbih-controls button {
+    flex: 1;
+    padding: 1.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tasbih-controls button i {
+    font-size: 1.4rem;
+}
+
+#tasbihButton {
+    background: var(--accent-color);
+    color: var(--background-color);
+    border: none;
+    min-width: 200px;
+}
+
+#tasbihButton:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
+    background: var(--primary-color);
+}
+
+#resetTasbih {
+    background: var(--background-color);
+    color: var(--accent-color);
+    border: 2px solid var(--accent-color);
+    min-width: 150px;
+}
+
+#resetTasbih:hover {
+    background: var(--accent-color);
+    color: var(--background-color);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(255, 215, 0, 0.2);
+}
+
+.tasbih-stats {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1rem auto;
+    padding: 1.5rem;
+    background: var(--background-color);
+    border-radius: 15px;
+    border: 2px solid var(--border-color);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem;
+    background: var(--card-background);
+    border-radius: 12px;
+}
+
+.stat-label {
+    font-size: 1rem;
+    color: var(--text-color);
+    min-width: 120px;
+    font-weight: 500;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+.stat-value {
+    font-weight: 600;
+    color: var(--accent-color);
+    min-width: 70px;
+    text-align: right;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .tasbih-section {
+        padding: 1rem;
+    }
+
+    .dhikr-selector {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .dhikr-button {
+        padding: 1.5rem;
+    }
+
+    .dhikr-button .arabic {
+        font-size: 1.8rem;
+    }
+
+    .tasbih-controls {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .tasbih-controls button {
+        width: 100%;
+        padding: 1.2rem;
+    }
+
+    .tasbih-visualization {
+        width: 260px;
+        height: 260px;
+    }
+
+    .tasbih-string {
+        width: 240px;
+        height: 240px;
+    }
+
+    .counter-ring {
+        width: 90px;
+        height: 90px;
+    }
+
+    #tasbihCount {
+        font-size: 2rem;
     }
 }

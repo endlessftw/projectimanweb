@@ -44,6 +44,16 @@
                             <span id="gregorianDate"></span>
                         </div>
                     </div>
+                    <div class="auth-section">
+                        <button class="auth-button" id="signInBtn">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Sign In
+                        </button>
+                        <button class="auth-button" id="signUpBtn">
+                            <i class="fas fa-user-plus"></i>
+                            Sign Up
+                        </button>
+                    </div>
                 </div>
             </nav>
             <div class="logo-section home-only">
@@ -183,23 +193,58 @@
             <!-- Tasbih Counter Page -->
             <div class="page" id="tasbih-page">
                 <section class="card tasbih-section">
-                    <h2><i class="fas fa-circle"></i> Tasbih Counter</h2>
+                    <h2><i class="fas fa-circle"></i> Digital Tasbih</h2>
                     <div class="tasbih-container">
-                        <div class="counter-display">
-                            <span id="tasbihCount">0</span>
-                        </div>
-                        <div class="tasbih-buttons">
-                            <button id="tasbihButton" class="primary-button">
-                                SubhanAllah
-                            </button>
-                            <button id="resetTasbih" class="secondary-button">
-                                Reset
-                            </button>
+                        <div class="tasbih-visualization">
+                            <div class="tasbih-string"></div>
+                            <div class="tasbih-beads">
+                                <!-- Beads will be added dynamically via JavaScript -->
+                            </div>
+                            <div class="tasbih-counter">
+                                <div class="counter-ring">
+                                    <span id="tasbihCount">0</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="dhikr-selector">
-                            <button class="dhikr-button active" data-dhikr="SubhanAllah">SubhanAllah</button>
-                            <button class="dhikr-button" data-dhikr="Alhamdulillah">Alhamdulillah</button>
-                            <button class="dhikr-button" data-dhikr="AllahuAkbar">Allahu Akbar</button>
+                            <button class="dhikr-button active" data-dhikr="SubhanAllah">
+                                <span class="arabic">سُبْحَانَ ٱللَّٰهِ</span>
+                                <span class="translation">SubhanAllah</span>
+                                <span class="meaning">Glory be to Allah</span>
+                            </button>
+                            <button class="dhikr-button" data-dhikr="Alhamdulillah">
+                                <span class="arabic">ٱلْحَمْدُ لِلَّٰهِ</span>
+                                <span class="translation">Alhamdulillah</span>
+                                <span class="meaning">All praise is due to Allah</span>
+                            </button>
+                            <button class="dhikr-button" data-dhikr="AllahuAkbar">
+                                <span class="arabic">اللّٰهُ أَكْبَر</span>
+                                <span class="translation">Allahu Akbar</span>
+                                <span class="meaning">Allah is the Greatest</span>
+                            </button>
+                        </div>
+                        <div class="tasbih-controls">
+                            <button id="tasbihButton" class="primary-button">
+                                <i class="fas fa-hand-point-up"></i>
+                                <span>Tap to Count</span>
+                            </button>
+                            <button id="resetTasbih" class="secondary-button">
+                                <i class="fas fa-undo"></i>
+                                <span>Reset</span>
+                            </button>
+                        </div>
+                        <div class="tasbih-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Set Progress</span>
+                                <div class="progress-bar">
+                                    <div class="progress" id="setProgress"></div>
+                                </div>
+                                <span class="stat-value"><span id="currentSet">0</span>/33</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Total Today</span>
+                                <span class="stat-value" id="totalToday">0</span>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -217,6 +262,7 @@
         </main>
     </div>
 
+    <!-- Auth Modal will be dynamically inserted here -->
     <script>
         // Initialize Supabase client globally
         const supabaseUrl = 'https://ioqspqqfksgepkqppxlz.supabase.co';

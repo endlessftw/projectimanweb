@@ -15,6 +15,9 @@ let userLocation = null;
 let qiblaDirection = null;
 let currentDhikr = 'SubhanAllah';
 let tasbihCount = 0;
+let currentSet = 0;
+let totalToday = 0;
+let lastResetDate = new Date().toDateString();
 
 // DOM Elements
 const elements = {
@@ -190,12 +193,23 @@ function createDayElement(date, isDifferentMonth, hijriData = null, isToday = fa
     ].filter(Boolean).join(' ');
 
     let islamicEventHTML = '';
+    let ramadanInfoBtn = '';
+    
     if (hijriData) {
         const dayEvents = getIslamicEvents(hijriData);
         if (dayEvents && dayEvents.length > 0) {
             islamicEventHTML = dayEvents.map(event => 
                 `<div class="islamic-event ${event.type}">${event.description}</div>`
             ).join('');
+            
+            // Add Ramadan info button if it's the first day of Ramadan
+            if (hijriData.month.en === 'Ramadan' && hijriData.day === '1') {
+                ramadanInfoBtn = `
+                    <div class="ramadan-info-btn" onclick="showRamadanInfo()">
+                        <i class="fas fa-info-circle"></i> Learn More
+                    </div>
+                `;
+            }
         }
     }
 
@@ -204,6 +218,7 @@ function createDayElement(date, isDifferentMonth, hijriData = null, isToday = fa
             <span class="gregorian-date">${date.getDate()}</span>
             ${hijriDateText}
             ${islamicEventHTML}
+            ${ramadanInfoBtn}
         </div>
     `;
 }
@@ -348,6 +363,270 @@ if (elements.nextMonth) {
     }
 })();
 
+// Add these auth-related functions at the global scope, before the init function
+let currentUser = null;
+
+async function checkAuthState() {
+    try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        
+        currentUser = session?.user || null;
+        updateAuthUI();
+    } catch (error) {
+        console.error('Error checking auth state:', error);
+    }
+}
+
+async function signInWithEmail(email, password) {
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+
+        if (error) throw error;
+
+        updateAuthUI();
+        alert('Successfully signed in!');
+    } catch (error) {
+        console.error('Error signing in:', error);
+        alert(error.message);
+    }
+}
+
+async function signUpWithEmail(email, password) {
+    try {
+        const { data, error } = await supabase.auth.signUp({
+            email: email,
+            password: password
+        });
+
+        if (error) throw error;
+
+        alert('Please check your email for verification link');
+    } catch (error) {
+        console.error('Error signing up:', error);
+        alert(error.message);
+    }
+}
+
+async function signOut() {
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        
+        updateAuthUI();
+        alert('Successfully signed out!');
+    } catch (error) {
+        console.error('Error signing out:', error);
+        alert(error.message);
+    }
+}
+
+function updateAuthUI() {
+    const authSection = document.querySelector('.auth-section');
+    if (!authSection) return;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+            authSection.innerHTML = `
+                <span class="user-email">
+                    <i class="fas fa-user"></i>
+                    ${session.user.email}
+                </span>
+                <button class="auth-button" id="signOutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Sign Out
+                </button>
+            `;
+            document.getElementById('signOutBtn').addEventListener('click', signOut);
+        } else {
+            authSection.innerHTML = `
+                <button class="auth-button" id="signInBtn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Sign In
+                </button>
+                <button class="auth-button" id="signUpBtn">
+                    <i class="fas fa-user-plus"></i>
+                    Sign Up
+                </button>
+            `;
+            document.getElementById('signInBtn').addEventListener('click', () => showAuthModal('signin'));
+            document.getElementById('signUpBtn').addEventListener('click', () => showAuthModal('signup'));
+        }
+    });
+}
+
+function showAuthModal(type) {
+    const modal = document.createElement('div');
+    modal.id = 'authModal';
+    modal.className = 'modal';
+    
+    const content = `
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeAuthModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2>${type === 'signup' ? 'Sign Up' : type === 'forgot' ? 'Reset Password' : 'Sign In'}</h2>
+            <form id="authForm-${type}" class="auth-form" onsubmit="handleAuth(event, '${type}')">
+                <div class="form-group">
+                    <label for="email-${type}">Email</label>
+                    <input type="email" id="email-${type}" name="email" required placeholder="Enter your email">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                ${type !== 'forgot' ? `
+                <div class="form-group">
+                    <label for="password-${type}">Password</label>
+                    <input type="password" id="password-${type}" name="password" required minlength="6" placeholder="Enter your password">
+                    <i class="fas fa-lock"></i>
+                </div>
+                ` : ''}
+                <button type="submit" class="auth-submit">
+                    ${type === 'signup' ? '<i class="fas fa-user-plus"></i> Sign Up' : 
+                      type === 'forgot' ? '<i class="fas fa-key"></i> Send Reset Link' : 
+                      '<i class="fas fa-sign-in-alt"></i> Sign In'}
+                </button>
+            </form>
+            <div class="auth-switch">
+                ${type === 'signin' ? `
+                    <p>Don't have an account? <a href="#" onclick="showAuthModal('signup')">Sign Up</a></p>
+                    <a href="#" class="forgot-link" onclick="showAuthModal('forgot')">
+                        <i class="fas fa-key"></i> Forgot Password?
+                    </a>
+                ` : type === 'signup' ? `
+                    <p>Already have an account? <a href="#" onclick="showAuthModal('signin')">Sign In</a></p>
+                ` : `
+                    <p>Remember your password? <a href="#" onclick="showAuthModal('signin')">Sign In</a></p>
+                `}
+            </div>
+        </div>
+    `;
+    
+    modal.innerHTML = content;
+    
+    // Remove any existing modal
+    const existingModal = document.getElementById('authModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    document.body.appendChild(modal);
+}
+
+// Add resetPassword function
+async function resetPassword(email) {
+    try {
+        // Use the production URL for password reset
+        const baseUrl = 'https://projectiman.netlify.app';
+        const redirectUrl = `${baseUrl}/reset-password.html`;
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: redirectUrl,
+            type: 'recovery'
+        });
+        
+        if (error) throw error;
+        
+        showNotification('Password reset link sent to your email! Please check your inbox and spam folder.', 'success');
+        closeAuthModal();
+    } catch (error) {
+        console.error('Reset password error:', error);
+        throw error;
+    }
+}
+
+// Update handleAuth function
+async function handleAuth(event, type) {
+    event.preventDefault();
+    
+    // Get the form and email field
+    const form = event.target;
+    const emailField = form.querySelector(`#email-${type}`);
+    
+    if (!emailField) {
+        showNotification('Error: Email field not found', 'error');
+        return;
+    }
+    
+    const email = emailField.value.trim();
+    const password = form.querySelector(`#password-${type}`)?.value;
+    const submitButton = form.querySelector('button[type="submit"]');
+    
+    // Enhanced email validation
+    if (!email) {
+        emailField.focus();
+        showNotification('Please enter your email address', 'error');
+        return;
+    }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        emailField.focus();
+        showNotification('Please enter a valid email address', 'error');
+        return;
+    }
+    
+    // Add loading state
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+    
+    try {
+        if (type === 'forgot') {
+            await resetPassword(email);
+            return; // Add early return after password reset
+        }
+        
+        if (!password && type !== 'forgot') {
+            showNotification('Please enter a password', 'error');
+            form.querySelector(`#password-${type}`)?.focus();
+            return;
+        }
+
+        if (type === 'signup') {
+            await signUpWithEmail(email, password);
+        } else {
+            await signInWithEmail(email, password);
+        }
+    } catch (error) {
+        showNotification(error.message, 'error');
+    } finally {
+        // Reset button state
+        submitButton.disabled = false;
+        submitButton.innerHTML = type === 'signup' ? '<i class="fas fa-user-plus"></i> Sign Up' : 
+                                type === 'forgot' ? '<i class="fas fa-key"></i> Send Reset Link' : 
+                                '<i class="fas fa-sign-in-alt"></i> Sign In';
+    }
+}
+
+function closeAuthModal() {
+    const modal = document.getElementById('authModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function showNotification(message, type = 'info') {
+    // Remove any existing notifications first
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(notification => notification.remove());
+
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+        ${message}
+    `;
+    document.body.appendChild(notification);
+
+    // Remove notification after 5 seconds
+    setTimeout(() => {
+        notification.classList.add('fade-out');
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
+}
+
 // Initialize the application
 async function init() {
     try {
@@ -357,6 +636,9 @@ async function init() {
         // Core functionality
         setupEventListeners();
         
+        // Check auth state
+        await checkAuthState();
+
         // Try to load user preferences but don't block if it fails
         try {
             await loadUserPreferences();
@@ -440,6 +722,9 @@ async function init() {
             console.warn('Could not initialize calendar:', error);
             displayFallbackCalendar();
         }
+        
+        // Initialize tasbih
+        loadTasbihState();
         
     } catch (error) {
         console.error('Error during initialization:', error);
@@ -591,32 +876,118 @@ async function loadUserPreferences() {
 
 async function saveTasbihCount() {
     try {
-        const { error } = await supabase
-            .from('user_preferences')
-            .upsert({ 
-                tasbih_count: tasbihCount,
-                current_dhikr: currentDhikr
-            });
+        // Check if Supabase is initialized
+        if (!supabase) {
+            throw new Error('Database connection not initialized');
+        }
 
-        if (error) throw error;
+        // Check if user is authenticated
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) {
+            console.error('Auth error:', authError);
+            throw new Error('Authentication error: ' + authError.message);
+        }
+        
+        if (!user) {
+            showNotification('Please sign in to save your progress', 'error');
+            return;
+        }
+
+        // Prepare the data to save
+        const preferenceData = {
+            user_id: user.id,
+            tasbih_count: tasbihCount,
+            current_dhikr: currentDhikr,
+            total_today: totalToday,
+            last_reset_date: lastResetDate
+        };
+
+        console.log('Saving preferences:', preferenceData);
+
+        // Save the preferences
+        const { data, error } = await supabase
+            .from('user_preferences')
+            .upsert(preferenceData)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Database error:', error);
+            if (error.code === '42P01') {
+                throw new Error('Database table not found. Please ensure the database is properly set up.');
+            } else if (error.code === '23505') {
+                // If it's a unique constraint violation, try an update instead
+                const { error: updateError } = await supabase
+                    .from('user_preferences')
+                    .update(preferenceData)
+                    .eq('user_id', user.id);
+                    
+                if (updateError) {
+                    throw new Error('Failed to update preferences: ' + updateError.message);
+                }
+            } else {
+                throw new Error(error.message || 'Failed to save preferences');
+            }
+        }
+
+        console.log('Preferences saved successfully:', data);
     } catch (error) {
         console.error('Error saving tasbih count:', error);
+        showNotification(error.message || 'Failed to save progress', 'error');
+        throw error; // Re-throw to handle in the calling function
     }
 }
 
 function updateTasbihDisplay() {
+    // Update counter
     elements.tasbihCount.textContent = tasbihCount;
-    elements.tasbihButton.textContent = currentDhikr;
+    
+    // Update set progress
+    currentSet = tasbihCount % 33;
+    document.getElementById('currentSet').textContent = currentSet;
+    document.getElementById('setProgress').style.width = `${(currentSet / 33) * 100}%`;
+    
+    // Update beads
+    const beads = document.querySelectorAll('.tasbih-bead');
+    beads.forEach((bead, index) => {
+        bead.classList.toggle('active', index < currentSet);
+    });
+    
+    // Check if we completed a set
+    if (currentSet === 0 && tasbihCount > 0) {
+        showNotification('Set completed! 33 times ' + currentDhikr, 'success');
+    }
+    
+    // Update total for today
+    const today = new Date().toDateString();
+    if (lastResetDate !== today) {
+        totalToday = 0;
+        lastResetDate = today;
+    }
+    document.getElementById('totalToday').textContent = totalToday;
 }
 
 function updateDhikrButtons() {
     elements.dhikrButtons.forEach(button => {
         button.classList.toggle('active', button.dataset.dhikr === currentDhikr);
     });
+    elements.tasbihButton.querySelector('span').textContent = 'Tap to Count';
 }
 
 // Event Listeners
 function setupEventListeners() {
+    // Add auth button listeners
+    const signInBtn = document.getElementById('signInBtn');
+    const signUpBtn = document.getElementById('signUpBtn');
+    
+    if (signInBtn) {
+        signInBtn.addEventListener('click', () => showAuthModal('signin'));
+    }
+    if (signUpBtn) {
+        signUpBtn.addEventListener('click', () => showAuthModal('signup'));
+    }
+
     // Logo click
     document.querySelector('.nav-logo').addEventListener('click', () => {
         navigateToPage('home');
@@ -670,27 +1041,17 @@ function setupEventListeners() {
 
     // Tasbih Counter
     if (elements.tasbihButton && elements.resetTasbih) {
-        elements.tasbihButton.addEventListener('click', () => {
-            tasbihCount++;
-            updateTasbihDisplay();
-            saveTasbihCount();
-        });
-
-        elements.resetTasbih.addEventListener('click', () => {
-            tasbihCount = 0;
-            updateTasbihDisplay();
-            saveTasbihCount();
-        });
+        elements.tasbihButton.addEventListener('click', handleTasbihClick);
+        elements.resetTasbih.addEventListener('click', resetTasbih);
     }
 
     // Dhikr Buttons
     if (elements.dhikrButtons) {
         elements.dhikrButtons.forEach(button => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', async () => {
                 currentDhikr = button.dataset.dhikr;
                 updateDhikrButtons();
-                updateTasbihDisplay();
-                saveTasbihCount();
+                await saveTasbihCount();
             });
         });
     }
@@ -702,6 +1063,14 @@ function setupEventListeners() {
             const pageId = e.target.dataset.page;
             navigateToPage(pageId);
         });
+    });
+
+    // Add keyboard shortcut for tasbih
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && document.getElementById('tasbih-page').classList.contains('active')) {
+            e.preventDefault();
+            handleTasbihClick();
+        }
     });
 }
 
@@ -1585,79 +1954,255 @@ const hadiths = [
         relatedHadiths: ["Sahih al-Bukhari 5028", "Sunan Ibn Majah 211"],
         arabicText: "خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ",
         votes: { upvotes: 0, downvotes: 0 }
+    },
+    {
+        id: 3,
+        text: "None of you truly believes until he loves for his brother what he loves for himself.",
+        reference: "Sahih al-Bukhari 13",
+        narrator: "Anas ibn Malik",
+        book: "Sahih al-Bukhari",
+        chapter: "Book of Faith",
+        grade: "Sahih",
+        explanation: "This hadith establishes one of the fundamental principles of Islamic brotherhood and social relations. It sets a high standard for how Muslims should treat one another and emphasizes the importance of genuine care for others.",
+        context: "This hadith was narrated in the context of teaching the companions about the completeness of faith and its relationship with good character.",
+        benefits: [
+            "Establishes the importance of brotherhood in Islam",
+            "Teaches empathy and compassion",
+            "Sets a practical standard for social relations",
+            "Shows that faith is connected to good character"
+        ],
+        relatedHadiths: ["Sahih Muslim 45", "Sunan al-Tirmidhi 2515"],
+        arabicText: "لَا يُؤْمِنُ أَحَدُكُمْ حَتَّى يُحِبَّ لِأَخِيهِ مَا يُحِبُّ لِنَفْسِهِ",
+        votes: { upvotes: 0, downvotes: 0 }
+    },
+    {
+        id: 4,
+        text: "The strong person is not the one who can wrestle others down. The strong person is the one who can control himself when angry.",
+        reference: "Sahih al-Bukhari 6114",
+        narrator: "Abu Hurairah",
+        book: "Sahih al-Bukhari",
+        chapter: "Book of Good Manners",
+        grade: "Sahih",
+        explanation: "This hadith redefines strength from physical prowess to emotional and spiritual control. It teaches that true strength lies in self-control, particularly during moments of anger.",
+        context: "This was said when people were discussing physical strength and wrestling, and the Prophet (peace be upon him) redirected their attention to moral strength.",
+        benefits: [
+            "Redefines the concept of strength",
+            "Teaches the importance of anger management",
+            "Encourages self-control",
+            "Shows the value of emotional intelligence"
+        ],
+        relatedHadiths: ["Sahih Muslim 2609", "Sunan Abu Dawood 4784"],
+        arabicText: "لَيْسَ الشَّدِيدُ بِالصُّرَعَةِ، إِنَّمَا الشَّدِيدُ الَّذِي يَمْلِكُ نَفْسَهُ عِنْدَ الْغَضَبِ",
+        votes: { upvotes: 0, downvotes: 0 }
+    },
+    {
+        id: 5,
+        text: "Whoever believes in Allah and the Last Day should speak good or remain silent.",
+        reference: "Sahih al-Bukhari 6475",
+        narrator: "Abu Hurairah",
+        book: "Sahih al-Bukhari",
+        chapter: "Book of Softening the Heart",
+        grade: "Sahih",
+        explanation: "This hadith teaches the importance of controlling one's speech and only speaking what is beneficial. It shows that silence is better than harmful or useless speech.",
+        context: "This was part of a longer hadith where the Prophet (peace be upon him) was teaching about the characteristics of true faith.",
+        benefits: [
+            "Teaches the importance of good speech",
+            "Shows the virtue of silence",
+            "Helps in avoiding sins of the tongue",
+            "Links speech to faith and character"
+        ],
+        relatedHadiths: ["Sahih Muslim 47", "Sunan Ibn Majah 3969"],
+        arabicText: "مَنْ كَانَ يُؤْمِنُ بِاللَّهِ وَالْيَوْمِ الْآخِرِ فَلْيَقُلْ خَيْرًا أَوْ لِيَصْمُتْ",
+        votes: { upvotes: 0, downvotes: 0 }
+    },
+    {
+        id: 6,
+        text: "A Muslim is the one from whose tongue and hands other Muslims are safe.",
+        reference: "Sahih al-Bukhari 10",
+        narrator: "Abdullah ibn Amr",
+        book: "Sahih al-Bukhari",
+        chapter: "Book of Faith",
+        grade: "Sahih",
+        explanation: "This hadith defines a fundamental characteristic of a true Muslim - being harmless to others. It encompasses both physical harm (hands) and verbal harm (tongue).",
+        context: "This was said when the Prophet (peace be upon him) was asked about who is the best Muslim.",
+        benefits: [
+            "Defines the basic character of a Muslim",
+            "Emphasizes the importance of not harming others",
+            "Covers both physical and verbal harm",
+            "Sets a practical standard for behavior"
+        ],
+        relatedHadiths: ["Sahih Muslim 41", "Sunan al-Nasa'i 4995"],
+        arabicText: "الْمُسْلِمُ مَنْ سَلِمَ الْمُسْلِمُونَ مِنْ لِسَانِهِ وَيَدِهِ",
+        votes: { upvotes: 0, downvotes: 0 }
+    },
+    {
+        id: 7,
+        text: "Cleanliness is half of faith.",
+        reference: "Sahih Muslim 223",
+        narrator: "Abu Malik Al-Ashari",
+        book: "Sahih Muslim",
+        chapter: "Book of Purification",
+        grade: "Sahih",
+        explanation: "This hadith emphasizes the importance of physical and spiritual cleanliness in Islam. It shows that purification is not just a physical act but a significant part of faith.",
+        context: "This was mentioned in the context of teaching about the importance of purification and cleanliness in Islam.",
+        benefits: [
+            "Shows the importance of cleanliness in Islam",
+            "Links physical cleanliness to spiritual purity",
+            "Encourages maintaining good hygiene",
+            "Demonstrates the comprehensive nature of Islam"
+        ],
+        relatedHadiths: ["Sunan al-Tirmidhi 3517", "Sunan Ibn Majah 280"],
+        arabicText: "الطُّهُورُ شَطْرُ الْإِيمَانِ",
+        votes: { upvotes: 0, downvotes: 0 }
+    },
+    {
+        id: 8,
+        text: "Paradise lies beneath the feet of mothers.",
+        reference: "Sunan al-Nasa'i 3104",
+        narrator: "Abdullah ibn Abbas",
+        book: "Sunan al-Nasa'i",
+        chapter: "Book of Jihad",
+        grade: "Sahih",
+        explanation: "This hadith highlights the high status of mothers in Islam and emphasizes the importance of serving and respecting them. It indicates that treating one's mother well is a path to Paradise.",
+        context: "This was said when someone asked about the rights of parents, particularly mothers.",
+        benefits: [
+            "Shows the high status of mothers in Islam",
+            "Emphasizes the importance of serving parents",
+            "Teaches respect for mothers",
+            "Links good treatment of parents to Paradise"
+        ],
+        relatedHadiths: ["Sahih al-Bukhari 5971", "Sahih Muslim 2548"],
+        arabicText: "الْجَنَّةُ تَحْتَ أَقْدَامِ الْأُمَّهَاتِ",
+        votes: { upvotes: 0, downvotes: 0 }
+    },
+    {
+        id: 9,
+        text: "Seek knowledge from the cradle to the grave.",
+        reference: "Al-Bayhaqi",
+        narrator: "Anas ibn Malik",
+        book: "Shu'ab al-Iman",
+        chapter: "Book of Knowledge",
+        grade: "Hasan",
+        explanation: "This hadith emphasizes the importance of continuous learning in Islam. It shows that the pursuit of knowledge is not limited by age or time.",
+        context: "This was said to encourage Muslims to continuously seek knowledge throughout their lives.",
+        benefits: [
+            "Encourages lifelong learning",
+            "Shows the value of knowledge in Islam",
+            "Motivates continuous self-improvement",
+            "Demonstrates that learning has no age limit"
+        ],
+        relatedHadiths: ["Sunan Ibn Majah 224", "Jami at-Tirmidhi 2646"],
+        arabicText: "اطْلُبُوا الْعِلْمَ مِنَ الْمَهْدِ إِلَى اللَّحْدِ",
+        votes: { upvotes: 0, downvotes: 0 }
+    },
+    {
+        id: 10,
+        text: "The best of you are those who are best to their families, and I am the best to my family.",
+        reference: "Sunan al-Tirmidhi 3895",
+        narrator: "Aisha",
+        book: "Jami at-Tirmidhi",
+        chapter: "Book of Virtues",
+        grade: "Sahih",
+        explanation: "This hadith establishes the importance of good treatment of family members. It shows that a person's character is best judged by how they treat their closest relations.",
+        context: "This was said to emphasize the importance of maintaining good character within the family unit.",
+        benefits: [
+            "Emphasizes good treatment of family",
+            "Sets a standard for domestic behavior",
+            "Shows the Prophet's example in family life",
+            "Links character to family treatment"
+        ],
+        relatedHadiths: ["Sahih al-Bukhari 3331", "Sahih Muslim 2325"],
+        arabicText: "خَيْرُكُمْ خَيْرُكُمْ لِأَهْلِهِ وَأَنَا خَيْرُكُمْ لِأَهْلِي",
+        votes: { upvotes: 0, downvotes: 0 }
     }
-    // ... other hadiths with similar detailed structure ...
 ];
 
 // Add this function to load votes from Supabase
 async function loadHadithVotes() {
     try {
-        // Reset all votes to 0 first
-        hadiths.forEach(hadith => {
-            hadith.votes = { upvotes: 0, downvotes: 0 };
-        });
-
-        // Try to load votes from database
-        const { data, error } = await supabase
+        // First try to load existing votes
+        const { data: existingVotes, error } = await supabase
             .from('hadith_votes')
-            .select('hadith_id, vote_type, count');
+            .select('*');
 
         if (error) {
-            // If table doesn't exist, initialize it
-            if (error.code === '42P01') { // PostgreSQL code for undefined_table
-                console.log('Initializing hadith votes table...');
+            if (error.code === '42P01') {
+                // Table doesn't exist, initialize it
                 await initializeHadithVotes();
-            } else {
-                throw error;
+                return;
             }
-        } else if (data) {
-            // Update votes from database
-            data.forEach(vote => {
-                const hadith = hadiths.find(h => h.id === vote.hadith_id);
-                if (hadith) {
-                    if (vote.vote_type === 'upvote') {
-                        hadith.votes.upvotes = vote.count;
-                    } else {
-                        hadith.votes.downvotes = vote.count;
-                    }
-                }
-            });
+            throw error;
         }
 
-        // Update the display
+        if (!existingVotes || existingVotes.length === 0) {
+            // No votes exist, initialize them
+            await initializeHadithVotes();
+            return;
+        }
+
+        // Update the hadiths array with vote counts
+        hadiths.forEach(hadith => {
+            const voteData = existingVotes.find(v => v.hadith_id === hadith.id);
+            if (voteData) {
+                hadith.votes = {
+                    upvotes: voteData.upvotes || 0,
+                    downvotes: voteData.downvotes || 0
+                };
+                hadith.upvotes = voteData.upvotes || 0;
+                hadith.downvotes = voteData.downvotes || 0;
+            } else {
+                hadith.votes = { upvotes: 0, downvotes: 0 };
+                hadith.upvotes = 0;
+                hadith.downvotes = 0;
+            }
+        });
+
         updateHadithVotesDisplay();
     } catch (error) {
         console.error('Error loading hadith votes:', error);
-        // Continue with default zero votes
+        // Initialize with zeros if there's an error
+        hadiths.forEach(hadith => {
+            hadith.votes = { upvotes: 0, downvotes: 0 };
+            hadith.upvotes = 0;
+            hadith.downvotes = 0;
+        });
         updateHadithVotesDisplay();
     }
 }
 
-// Add this new function to initialize votes
 async function initializeHadithVotes() {
     try {
-        // Initialize votes for each hadith
-        const voteData = hadiths.flatMap(hadith => [
-            {
-                hadith_id: hadith.id,
-                vote_type: 'upvote',
-                count: 0
-            },
-            {
-                hadith_id: hadith.id,
-                vote_type: 'downvote',
-                count: 0
-            }
-        ]);
+        // Create initial vote data for each hadith
+        const voteData = hadiths.map(hadith => ({
+            hadith_id: hadith.id,
+            upvotes: 0,
+            downvotes: 0
+        }));
 
+        // Insert initial vote data
         const { error } = await supabase
             .from('hadith_votes')
             .upsert(voteData);
 
         if (error) throw error;
+
+        // Update the hadiths array
+        hadiths.forEach(hadith => {
+            hadith.votes = { upvotes: 0, downvotes: 0 };
+            hadith.upvotes = 0;
+            hadith.downvotes = 0;
+        });
+
+        updateHadithVotesDisplay();
     } catch (error) {
         console.error('Error initializing hadith votes:', error);
-        throw error;
+        // Initialize with zeros if there's an error
+        hadiths.forEach(hadith => {
+            hadith.votes = { upvotes: 0, downvotes: 0 };
+            hadith.upvotes = 0;
+            hadith.downvotes = 0;
+        });
+        updateHadithVotesDisplay();
     }
 }
 
@@ -1669,74 +2214,136 @@ function updateHadithVotesDisplay() {
             const upvoteSpan = hadithCard.querySelector('.upvote span');
             const downvoteSpan = hadithCard.querySelector('.downvote span');
             
-            upvoteSpan.textContent = hadith.votes.upvotes;
-            downvoteSpan.textContent = hadith.votes.downvotes;
+            upvoteSpan.textContent = hadith.upvotes;
+            downvoteSpan.textContent = hadith.downvotes;
         }
     });
 }
 
 // Update the handleHadithVote function
 async function handleHadithVote(hadithId, isUpvote) {
+    // Get the current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        alert('Please sign in to vote');
+        return;
+    }
+
+    const userId = user.id;
+    const hadithCard = document.querySelector(`.hadith-card[data-id="${hadithId}"]`);
+    const upvoteBtn = hadithCard.querySelector('.upvote');
+    const downvoteBtn = hadithCard.querySelector('.downvote');
+    
+    // Disable buttons during processing
+    upvoteBtn.disabled = true;
+    downvoteBtn.disabled = true;
+
     try {
-        const user = supabase.auth.user();
-        if (!user) {
-            alert('Please sign in to vote');
-            return;
-        }
-
-        const voteType = isUpvote ? 'upvote' : 'downvote';
-        
-        // Check if user has already voted
-        const { data: existingVote, error: checkError } = await supabase
+        // Get the current vote state
+        const { data: existingVote, error: voteError } = await supabase
             .from('user_hadith_votes')
-            .select('*')
-            .eq('hadith_id', hadithId)
-            .eq('user_id', user.id)
-            .single();
-
-        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows found
-            throw checkError;
-        }
-
-        if (existingVote) {
-            alert('You have already voted on this hadith');
-            return;
-        }
-
-        // Record the user's vote
-        const { error: voteError } = await supabase
-            .from('user_hadith_votes')
-            .insert([{
-                hadith_id: hadithId,
-                user_id: user.id,
-                vote_type: voteType
-            }]);
+            .select('is_upvote')
+            .match({ hadith_id: hadithId, user_id: userId })
+            .maybeSingle();
 
         if (voteError) throw voteError;
 
-        // Update the vote count
+        // Get current vote counts
+        const { data: currentVotes, error: votesError } = await supabase
+            .from('hadith_votes')
+            .select('upvotes, downvotes')
+            .eq('hadith_id', hadithId)
+            .single();
+
+        if (votesError) throw votesError;
+
+        let newUpvotes = currentVotes.upvotes || 0;
+        let newDownvotes = currentVotes.downvotes || 0;
+
+        // Calculate new vote counts based on action
+        if (!existingVote) {
+            // New vote
+            if (isUpvote) {
+                newUpvotes++;
+            } else {
+                newDownvotes++;
+            }
+            await supabase
+                .from('user_hadith_votes')
+                .insert({ hadith_id: hadithId, user_id: userId, is_upvote: isUpvote });
+        } else if (existingVote.is_upvote === isUpvote) {
+            // Remove vote
+            if (isUpvote) {
+                newUpvotes = Math.max(0, newUpvotes - 1);
+            } else {
+                newDownvotes = Math.max(0, newDownvotes - 1);
+            }
+            await supabase
+                .from('user_hadith_votes')
+                .delete()
+                .match({ hadith_id: hadithId, user_id: userId });
+        } else {
+            // Switch vote
+            if (isUpvote) {
+                newUpvotes++;
+                newDownvotes = Math.max(0, newDownvotes - 1);
+            } else {
+                newDownvotes++;
+                newUpvotes = Math.max(0, newUpvotes - 1);
+            }
+            await supabase
+                .from('user_hadith_votes')
+                .update({ is_upvote: isUpvote })
+                .match({ hadith_id: hadithId, user_id: userId });
+        }
+
+        // Update total votes
         const { error: updateError } = await supabase
             .from('hadith_votes')
-            .upsert([{
-                hadith_id: hadithId,
-                vote_type: voteType,
-                count: supabase.raw('COALESCE(count, 0) + 1')
-            }]);
+            .update({ upvotes: newUpvotes, downvotes: newDownvotes })
+            .eq('hadith_id', hadithId);
 
         if (updateError) throw updateError;
 
-        // Reload votes to update display
-        await loadHadithVotes();
-
-        // Disable the voted button
-        const hadithCard = document.querySelector(`.hadith-card[data-id="${hadithId}"]`);
-        const votedButton = hadithCard.querySelector(isUpvote ? '.upvote' : '.downvote');
-        votedButton.disabled = true;
-        votedButton.classList.add('voted');
+        // Update UI
+        const upvoteSpan = upvoteBtn.querySelector('span');
+        const downvoteSpan = downvoteBtn.querySelector('span');
+        upvoteSpan.textContent = newUpvotes;
+        downvoteSpan.textContent = newDownvotes;
+        
+        // Update button states
+        if (!existingVote) {
+            // New vote
+            if (isUpvote) {
+                upvoteBtn.classList.add('voted');
+            } else {
+                downvoteBtn.classList.add('voted');
+            }
+        } else if (existingVote.is_upvote === isUpvote) {
+            // Remove vote
+            if (isUpvote) {
+                upvoteBtn.classList.remove('voted');
+            } else {
+                downvoteBtn.classList.remove('voted');
+            }
+        } else {
+            // Switch vote
+            if (isUpvote) {
+                upvoteBtn.classList.add('voted');
+                downvoteBtn.classList.remove('voted');
+            } else {
+                downvoteBtn.classList.add('voted');
+                upvoteBtn.classList.remove('voted');
+            }
+        }
 
     } catch (error) {
         console.error('Error handling vote:', error);
-        alert('Error recording vote. Please try again.');
+        alert('Error processing your vote. Please try again.');
+    } finally {
+        // Re-enable buttons
+        upvoteBtn.disabled = false;
+        downvoteBtn.disabled = false;
     }
 }
 
@@ -1755,11 +2362,11 @@ async function loadHadith() {
                         <div class="hadith-votes">
                             <button class="vote-btn upvote" onclick="handleHadithVote(${hadith.id}, true)">
                                 <i class="fas fa-arrow-up"></i>
-                                <span>${hadith.votes.upvotes}</span>
+                                <span>${hadith.upvotes}</span>
                             </button>
                             <button class="vote-btn downvote" onclick="handleHadithVote(${hadith.id}, false)">
                                 <i class="fas fa-arrow-down"></i>
-                                <span>${hadith.votes.downvotes}</span>
+                                <span>${hadith.downvotes}</span>
                             </button>
                         </div>
                         <div class="hadith-main">
@@ -1826,27 +2433,55 @@ async function loadHadith() {
 // Dua Functions
 async function loadDua() {
     try {
-        // Predefined list of duas
+        // Predefined list of duas with categories and references
         const duas = [
             {
+                category: "Daily Life",
                 arabic: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ",
                 transliteration: "Rabbana atina fid-dunya hasanatan wa fil-akhirati hasanatan waqina 'adhaban-nar",
-                translation: "Our Lord, grant us good in this world and good in the Hereafter, and protect us from the punishment of the Fire."
+                translation: "Our Lord, grant us good in this world and good in the Hereafter, and protect us from the punishment of the Fire.",
+                reference: "Quran 2:201",
+                benefits: [
+                    "A comprehensive dua for both worldly and religious well-being",
+                    "One of the most frequently recited duas in the Quran",
+                    "Was regularly recited by Prophet Muhammad ﷺ"
+                ]
             },
             {
-                arabic: "رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي",
-                transliteration: "Rabbi-shrah li sadri, wa yassir li amri",
-                translation: "My Lord, expand for me my chest [with assurance] and ease for me my task."
-            },
-            {
+                category: "Knowledge",
                 arabic: "رَبِّ زِدْنِي عِلْماً",
                 transliteration: "Rabbi zidni 'ilma",
-                translation: "My Lord, increase me in knowledge."
+                translation: "My Lord, increase me in knowledge.",
+                reference: "Quran 20:114",
+                benefits: [
+                    "Helps in seeking beneficial knowledge",
+                    "Increases wisdom and understanding",
+                    "Recommended to recite before studying"
+                ]
             },
             {
+                category: "Protection",
                 arabic: "حَسْبِيَ اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ ۖ عَلَيْهِ تَوَكَّلْتُ ۖ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ",
                 transliteration: "Hasbiyallahu la ilaha illa huwa 'alayhi tawakkaltu wa huwa rabbul 'arshil 'adheem",
-                translation: "Sufficient for me is Allah; there is no deity except Him. On Him I have relied, and He is the Lord of the Great Throne."
+                translation: "Sufficient for me is Allah; there is no deity except Him. On Him I have relied, and He is the Lord of the Great Throne.",
+                reference: "Quran 9:129",
+                benefits: [
+                    "Provides strong protection from all harm",
+                    "Strengthens trust in Allah",
+                    "Helps in times of difficulty and anxiety"
+                ]
+            },
+            {
+                category: "Success",
+                arabic: "رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي",
+                transliteration: "Rabbi-shrah li sadri, wa yassir li amri",
+                translation: "My Lord, expand for me my chest [with assurance] and ease for me my task.",
+                reference: "Quran 20:25-26",
+                benefits: [
+                    "Helps in overcoming difficulties",
+                    "Brings ease in tasks and decisions",
+                    "Reduces anxiety and stress"
+                ]
             }
         ];
 
@@ -1854,16 +2489,94 @@ async function loadDua() {
         const randomDua = duas[Math.floor(Math.random() * duas.length)];
 
         elements.duaContent.innerHTML = `
-            <div class="dua-arabic">${randomDua.arabic}</div>
-            <div class="dua-transliteration">${randomDua.transliteration}</div>
-            <div class="dua-translation">${randomDua.translation}</div>
+            <div class="dua-card">
+                <div class="dua-category">
+                    <i class="fas fa-bookmark"></i>
+                    ${randomDua.category}
+                </div>
+                
+                <div class="dua-text">
+                    <div class="dua-arabic">
+                        ${randomDua.arabic}
+                        <button class="copy-btn" onclick="copyToClipboard('${randomDua.arabic}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="dua-transliteration">
+                        <div class="label">Transliteration</div>
+                        ${randomDua.transliteration}
+                        <button class="copy-btn" onclick="copyToClipboard('${randomDua.transliteration}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="dua-translation">
+                        <div class="label">Translation</div>
+                        ${randomDua.translation}
+                    </div>
+                </div>
+                
+                <div class="dua-reference">
+                    <i class="fas fa-book"></i>
+                    Reference: ${randomDua.reference}
+                </div>
+                
+                <div class="dua-benefits">
+                    <h3><i class="fas fa-star"></i> Benefits</h3>
+                    <ul>
+                        ${randomDua.benefits.map(benefit => `<li>${benefit}</li>`).join('')}
+                    </ul>
+                </div>
+                
+                <div class="dua-actions">
+                    <button class="action-btn share-btn" onclick="shareDua('${randomDua.arabic}', '${randomDua.translation}')">
+                        <i class="fas fa-share-alt"></i> Share
+                    </button>
+                    <button class="action-btn refresh-btn" onclick="loadDua()">
+                        <i class="fas fa-sync-alt"></i> New Dua
+                    </button>
+                </div>
+            </div>
         `;
+
+        // Add copy to clipboard functionality
+        window.copyToClipboard = async (text) => {
+            try {
+                await navigator.clipboard.writeText(text);
+                showNotification('Copied to clipboard!', 'success');
+            } catch (err) {
+                showNotification('Failed to copy text', 'error');
+            }
+        };
+
+        // Add share functionality
+        window.shareDua = async (arabic, translation) => {
+            try {
+                const shareText = `${arabic}\n\n${translation}`;
+                if (navigator.share) {
+                    await navigator.share({
+                        title: 'Dua of the Day',
+                        text: shareText
+                    });
+                } else {
+                    await navigator.clipboard.writeText(shareText);
+                    showNotification('Dua copied to clipboard for sharing!', 'success');
+                }
+            } catch (err) {
+                showNotification('Failed to share dua', 'error');
+            }
+        };
+
     } catch (error) {
         console.error('Error loading dua:', error);
         elements.duaContent.innerHTML = `
             <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
                 Unable to load Dua of the Day. Please try again.
-                <button onclick="loadDua()" class="retry-button">Retry</button>
+                <button onclick="loadDua()" class="retry-button">
+                    <i class="fas fa-sync-alt"></i> Try Again
+                </button>
             </div>
         `;
     }
@@ -2159,6 +2872,245 @@ function toggleHadithDetails(hadithId) {
         detailsSection.classList.add('expanded');
         expandIcon.style.transform = 'rotate(180deg)';
         expandText.textContent = 'Hide Details';
+    }
+}
+
+// Add this function to show the Ramadan info popup
+function showRamadanInfo() {
+    // Create and append overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'popup-overlay';
+    document.body.appendChild(overlay);
+
+    // Create and append popup
+    const popup = document.createElement('div');
+    popup.className = 'ramadan-popup';
+    popup.innerHTML = `
+        <button class="close-btn" onclick="closeRamadanInfo()">
+            <i class="fas fa-times"></i>
+        </button>
+        <h3><i class="fas fa-moon"></i> First Day of Ramadan</h3>
+        <p>The first day of Ramadan marks the beginning of the most sacred month in the Islamic calendar. This blessed month is when:</p>
+        <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+            <li>Muslims fast from dawn to sunset</li>
+            <li>The Holy Quran was first revealed to Prophet Muhammad ﷺ</li>
+            <li>Good deeds are multiplied in reward</li>
+            <li>The Night of Power (Laylat al-Qadr) occurs</li>
+        </ul>
+        <p>During this month, Muslims strengthen their faith through:</p>
+        <ul style="margin-left: 1.5rem;">
+            <li>Increased prayer and worship</li>
+            <li>Reading and reflecting on the Quran</li>
+            <li>Giving charity</li>
+            <li>Self-reflection and spiritual growth</li>
+        </ul>
+    `;
+    document.body.appendChild(popup);
+
+    // Add active class after a small delay to trigger animation
+    setTimeout(() => {
+        overlay.classList.add('active');
+        popup.classList.add('active');
+    }, 10);
+}
+
+// Add this function to close the Ramadan info popup
+function closeRamadanInfo() {
+    const overlay = document.querySelector('.popup-overlay');
+    const popup = document.querySelector('.ramadan-popup');
+    
+    if (overlay && popup) {
+        overlay.classList.remove('active');
+        popup.classList.remove('active');
+        
+        // Remove elements after animation
+        setTimeout(() => {
+            overlay.remove();
+            popup.remove();
+        }, 300);
+    }
+}
+
+// Add these functions before setupEventListeners
+// Initialize tasbih beads
+function initializeTasbihBeads() {
+    const beadsContainer = document.querySelector('.tasbih-beads');
+    beadsContainer.innerHTML = '';
+    
+    // Create 33 beads
+    for (let i = 0; i < 33; i++) {
+        const bead = document.createElement('div');
+        bead.className = 'tasbih-bead';
+        
+        // Calculate position in a circle
+        const angle = (i * 360 / 33) * (Math.PI / 180);
+        const radius = 120; // Adjust this value to change the circle size
+        
+        // Calculate x and y coordinates
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        
+        // Position the bead
+        bead.style.transform = `translate(${x}px, ${y}px)`;
+        
+        beadsContainer.appendChild(bead);
+    }
+}
+
+// Update tasbih display and animations
+function updateTasbihDisplay() {
+    if (!elements.tasbihCount) return;
+    
+    // Update counter
+    elements.tasbihCount.textContent = tasbihCount;
+    
+    // Update set progress
+    currentSet = tasbihCount % 33;
+    const currentSetElement = document.getElementById('currentSet');
+    const setProgressElement = document.getElementById('setProgress');
+    const totalTodayElement = document.getElementById('totalToday');
+    
+    if (currentSetElement) currentSetElement.textContent = currentSet;
+    if (setProgressElement) setProgressElement.style.width = `${(currentSet / 33) * 100}%`;
+    
+    // Update beads
+    const beads = document.querySelectorAll('.tasbih-bead');
+    beads.forEach((bead, index) => {
+        bead.classList.toggle('active', index < currentSet);
+    });
+    
+    // Check if we completed a set
+    if (currentSet === 0 && tasbihCount > 0) {
+        showNotification('Set completed! 33 times ' + currentDhikr, 'success');
+    }
+    
+    // Update total for today
+    const today = new Date().toDateString();
+    if (lastResetDate !== today) {
+        totalToday = 0;
+        lastResetDate = today;
+    }
+    if (totalTodayElement) totalTodayElement.textContent = totalToday;
+}
+
+// Handle tasbih button click with haptic feedback
+async function handleTasbihClick() {
+    tasbihCount++;
+    totalToday++;
+    
+    // Add haptic feedback if supported
+    if (navigator.vibrate) {
+        navigator.vibrate(20);
+    }
+    
+    // Animate the active bead
+    const currentBead = document.querySelector(`.tasbih-bead:nth-child(${(currentSet + 1)})`);
+    if (currentBead) {
+        currentBead.classList.add('active');
+        currentBead.style.transform += ' scale(1.2)';
+        setTimeout(() => {
+            currentBead.style.transform = currentBead.style.transform.replace(' scale(1.2)', '');
+        }, 200);
+    }
+    
+    updateTasbihDisplay();
+    await saveTasbihCount();
+}
+
+// Reset tasbih counter
+async function resetTasbih() {
+    const wasReset = confirm('Are you sure you want to reset the counter?');
+    if (wasReset) {
+        tasbihCount = 0;
+        currentSet = 0;
+        updateTasbihDisplay();
+        await saveTasbihCount();
+        showNotification('Counter has been reset', 'success');
+    }
+}
+
+// Update dhikr selection
+function updateDhikrButtons() {
+    if (!elements.dhikrButtons) return;
+    
+    elements.dhikrButtons.forEach(button => {
+        button.classList.toggle('active', button.dataset.dhikr === currentDhikr);
+    });
+    
+    const tasbihButtonSpan = elements.tasbihButton?.querySelector('span');
+    if (tasbihButtonSpan) {
+        tasbihButtonSpan.textContent = 'Tap to Count';
+    }
+}
+
+// Load tasbih state
+async function loadTasbihState() {
+    try {
+        // Check if user is authenticated
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) throw new Error('Authentication error: ' + authError.message);
+        if (!user) {
+            // If not authenticated, use default values
+            tasbihCount = 0;
+            currentDhikr = 'SubhanAllah';
+            totalToday = 0;
+            lastResetDate = new Date().toDateString();
+            initializeTasbihBeads();
+            updateTasbihDisplay();
+            updateDhikrButtons();
+            return;
+        }
+
+        const { data, error } = await supabase
+            .from('user_preferences')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+        if (error && error.code !== 'PGRST116') {
+            throw new Error('Database error: ' + error.message);
+        }
+
+        if (data) {
+            tasbihCount = data.tasbih_count || 0;
+            currentDhikr = data.current_dhikr || 'SubhanAllah';
+            totalToday = data.total_today || 0;
+            lastResetDate = data.last_reset_date || new Date().toDateString();
+            
+            // Reset total if it's a new day
+            const today = new Date().toDateString();
+            if (lastResetDate !== today) {
+                totalToday = 0;
+                lastResetDate = today;
+                // Update the reset in database
+                await saveTasbihCount();
+            }
+        } else {
+            // Initialize with default values if no data exists
+            tasbihCount = 0;
+            currentDhikr = 'SubhanAllah';
+            totalToday = 0;
+            lastResetDate = new Date().toDateString();
+            // Create initial record
+            await saveTasbihCount();
+        }
+
+        initializeTasbihBeads();
+        updateTasbihDisplay();
+        updateDhikrButtons();
+    } catch (error) {
+        console.error('Error loading tasbih state:', error);
+        showNotification(error.message || 'Failed to load saved progress', 'error');
+        
+        // Use default values on error
+        tasbihCount = 0;
+        currentDhikr = 'SubhanAllah';
+        totalToday = 0;
+        lastResetDate = new Date().toDateString();
+        initializeTasbihBeads();
+        updateTasbihDisplay();
+        updateDhikrButtons();
     }
 }
 

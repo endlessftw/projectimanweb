@@ -1,0 +1,148 @@
+<invoke name="edit_file">
+<parameter name="target_file">styles.css</parameter>
+<parameter name="instructions">I will add light mode theme variables at the beginning of the CSS file.</parameter>
+<parameter name="code_edit">:root {
+    /* Dark theme (default) */
+    --primary-color: #00b4d8;
+    --secondary-color: #48cae4;
+    --accent-color: #ffd700;
+    --background-color: #121212;
+    --card-background: #1e1e1e;
+    --text-color: #ffffff;
+    --text-secondary: #90caf9;
+    --border-color: #2a2a2a;
+    --success-color: #4caf50;
+    --error-color: #f44336;
+    --gold: #ffd700;
+    --emerald: #50c878;
+    --sapphire: #0f52ba;
+}
+
+body[data-theme="light"] {
+    --primary-color: #0077b6;
+    --secondary-color: #00b4d8;
+    --accent-color: #ffd700;
+    --background-color: #f5f5f5;
+    --card-background: #ffffff;
+    --text-color: #333333;
+    --text-secondary: #666666;
+    --border-color: #e0e0e0;
+    --success-color: #4caf50;
+    --error-color: #f44336;
+    --gold: #daa520;
+    --emerald: #2e8b57;
+    --sapphire: #0f52ba;
+}
+
+/* Remove all calendar-related styles */
+.calendar-section,
+.calendar-header,
+.calendar-controls,
+.calendar-grid,
+.calendar-days,
+.calendar-day,
+.weekday,
+.gregorian-date,
+.hijri-date,
+.islamic-event,
+.islamic-event.special,
+.islamic-event.holy {
+    display: none;
+}
+
+/* Qibla Direction Styles */
+.qibla-direction {
+    text-align: center;
+    padding: 2rem;
+}
+
+.compass-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.compass {
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    background: var(--card-background);
+    position: relative;
+    border: 3px solid var(--accent-color);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.arrow {
+    width: 4px;
+    height: 120px;
+    background: linear-gradient(to bottom, var(--accent-color) 50%, var(--primary-color) 50%);
+    position: relative;
+    transform-origin: bottom center;
+    transition: transform 0.3s ease;
+}
+
+.arrow::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -8px;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 16px solid var(--accent-color);
+}
+
+#qiblaAngle {
+    font-size: 1.5rem;
+    color: var(--accent-color);
+    margin-bottom: 1rem;
+    font-family: 'Playfair Display', serif;
+}
+
+#qiblaStatus {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.direction-markers {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.direction-marker {
+    position: absolute;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.direction-marker.north { top: 20px; left: 50%; transform: translateX(-50%); }
+.direction-marker.south { bottom: 20px; left: 50%; transform: translateX(-50%); }
+.direction-marker.east { right: 20px; top: 50%; transform: translateY(-50%); }
+.direction-marker.west { left: 20px; top: 50%; transform: translateY(-50%); }
+
+@media (max-width: 768px) {
+    .compass {
+        width: 240px;
+        height: 240px;
+    }
+    
+    .arrow {
+        height: 100px;
+    }
+    
+    #qiblaAngle {
+        font-size: 1.2rem;
+    }
+}
+```
+</parameter>
+</invoke>
+</rewritten_file>
